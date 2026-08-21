@@ -1,0 +1,321 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { Shield, Camera, AlertTriangle, CheckCircle2, Clock, Eye, AlertCircle } from 'lucide-react';
+import axios from 'axios';
+
+const SAMPLE_QUESTIONS = [
+  {
+    id: 1,
+    question: "Which data structure operates on a Last In First Out (LIFO) basis?",
+    options: ["Queue", "Stack", "Binary Tree", "Linked List"],
+  },
+  {
+    id: 2,
+    question: "What is the average time complexity of searching an element in a balanced Binary Search Tree (BST)?",
+    options: ["O(1)", "O(n)", "O(log n)", "O(n log n)"],
+  },
+  {
+    id: 3,
+    question: "In computer vision, what is the primary role of the Haar Cascade classifier?",
+    options: ["Image segmentation", "Object & feature detection", "Style transfer", "Color correction"],
+  },
+];
+
+export default function StudentExam() {
+  const { user, logout } = useAuth();
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [selectedAnswers, setSelectedAnswers] = useState({});
+  const [timeLeft, setTimeLeft] = useState(1800); // 30 minutes
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [lastWarning, setLastWarning] = useState(null);
+  const [statusMessage, setStatusMessage] = useState('Camera initializing...');
+  const [cvConnected, setCvConnected] = useState(false);
+
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const sessionId = useRef(`sess_${user?._id || 'demo'}_${Date.now()}`);
+
+  // Countdown timer
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Initialize Camera
+  useEffect(() => {
+    let stream = null;
+    const startCamera = async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: 640, height: 480 },
+          audio: false,
+        });
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          setIsCameraActive(true);
+          setStatusMessage('AI Proctoring Active & Secure');
+        }
+      } catch (err) {
+        console.error('Camera access denied:', err);
+        setStatusMessage('⚠️ Camera access denied! Required for proctoring.');
+      }
+    };
+
+    startCamera();
+
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, []);
+
+  // Frame Sampling & AI Analysis Loop (Every 2 seconds)
+  useEffect(() => {
+    if (!isCameraActive) return;
+
+    const interval = setInterval(async () => {
+      if (!videoRef.current || !canvasRef.current) return;
+
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+
+      if (video.videoWidth > 0 && video.videoHeight > 0) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const base64Image = canvas.toDataURL('image/jpeg', 0.6);
+
+        try {
+          const res = await axios.post('http://localhost:8000/cv/v1/analyze/frame', {
+            session_id: sessionId.current,
+            image_base64: base64Image,
+            student_id: user?._id,
+          });
+
+          setCvConnected(true);
+
+          if (res.data.confirmed_events && res.data.confirmed_events.length > 0) {
+            const latest = res.data.confirmed_events[0];
+            setLastWarning(`Alert: ${latest.event_type.replace('_', ' ')} detected!`);
+          } else {
+            setLastWarning(null);
+          }
+        } catch (err) {
+          // CV microservice not yet running or network blip
+          setCvConnected(false);
+        }
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [isCameraActive, user]);
+
+  // Track Tab / Window Focus
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setLastWarning('Warning: Tab switch or focus lost detected!');
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-950 flex flex-col">
+      {/* Header */}
+      <header className="border-b border-slate-800 bg-slate-900/60 backdrop-blur px-6 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-indigo-500/10 border border-indigo-500/30 rounded-lg text-indigo-400">
+            <Shield className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-sm font-semibold text-white">CS402: Advanced Algorithms & Data Structures</h1>
+            <p className="text-xs text-slate-400">Candidate: {user?.name || 'Student'}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg text-sm">
+            <Clock className="w-4 h-4 text-indigo-400" />
+            <span className="font-mono text-slate-200">{formatTime(timeLeft)}</span>
+          </div>
+
+          <button
+            onClick={logout}
+            className="text-xs text-slate-400 hover:text-slate-200 transition"
+          >
+            Exit Exam
+          </button>
+        </div>
+      </header>
+
+      {/* Main Container */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 p-6 max-w-7xl mx-auto w-full">
+        {/* Exam Questions Section (2 Cols) */}
+        <div className="lg:col-span-2 space-y-6 flex flex-col justify-between">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+              <span className="text-xs font-semibold uppercase tracking-wider text-indigo-400">
+                Question {currentQuestion + 1} of {SAMPLE_QUESTIONS.length}
+              </span>
+              <span className="text-xs text-slate-400">Single Choice (1 Point)</span>
+            </div>
+
+            <h2 className="text-lg font-medium text-slate-100 mb-6">
+              {SAMPLE_QUESTIONS[currentQuestion].question}
+            </h2>
+
+            <div className="space-y-3">
+              {SAMPLE_QUESTIONS[currentQuestion].options.map((option, idx) => {
+                const isSelected = selectedAnswers[currentQuestion] === idx;
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedAnswers({ ...selectedAnswers, [currentQuestion]: idx })}
+                    className={`w-full text-left p-4 rounded-xl border transition flex items-center justify-between ${
+                      isSelected
+                        ? 'bg-indigo-600/15 border-indigo-500 text-white shadow-sm'
+                        : 'bg-slate-950/50 border-slate-800 text-slate-300 hover:bg-slate-800/40 hover:border-slate-700'
+                    }`}
+                  >
+                    <span className="text-sm font-medium">{option}</span>
+                    <div
+                      className={`w-5 h-5 rounded-full border flex items-center justify-center ${
+                        isSelected ? 'border-indigo-500 bg-indigo-600' : 'border-slate-700'
+                      }`}
+                    >
+                      {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Navigation Controls */}
+          <div className="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-xl p-4">
+            <button
+              disabled={currentQuestion === 0}
+              onClick={() => setCurrentQuestion((prev) => prev - 1)}
+              className="px-4 py-2 rounded-lg border border-slate-700 text-sm font-medium text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-800 transition"
+            >
+              Previous
+            </button>
+
+            <div className="flex gap-1.5">
+              {SAMPLE_QUESTIONS.map((_, i) => (
+                <div
+                  key={i}
+                  className={`w-2.5 h-2.5 rounded-full ${
+                    selectedAnswers[i] !== undefined
+                      ? 'bg-indigo-500'
+                      : i === currentQuestion
+                      ? 'bg-slate-400'
+                      : 'bg-slate-800'
+                  }`}
+                />
+              ))}
+            </div>
+
+            {currentQuestion < SAMPLE_QUESTIONS.length - 1 ? (
+              <button
+                onClick={() => setCurrentQuestion((prev) => prev + 1)}
+                className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-sm font-medium text-white transition shadow-sm"
+              >
+                Next Question
+              </button>
+            ) : (
+              <button
+                onClick={() => alert('Exam submitted successfully!')}
+                className="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-sm font-medium text-white transition shadow-sm"
+              >
+                Submit Exam
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Proctoring Video & Status Feed (1 Col) */}
+        <div className="space-y-6">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Camera className="w-4 h-4 text-indigo-400" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-200">
+                  Live Camera Feed
+                </span>
+              </div>
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                Monitoring
+              </span>
+            </div>
+
+            {/* Video Container */}
+            <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-950 border border-slate-800 flex items-center justify-center">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover mirror"
+              />
+              <canvas ref={canvasRef} className="hidden" />
+
+              {!isCameraActive && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500 p-4 text-center">
+                  <Camera className="w-8 h-8 mb-2 opacity-50" />
+                  <p className="text-xs">Camera stream not active</p>
+                </div>
+              )}
+            </div>
+
+            {/* Warning / Alert Notice */}
+            {lastWarning && (
+              <div className="mt-3 p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-start gap-2.5 text-rose-400 text-xs animate-shake">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold">{lastWarning}</p>
+                  <p className="text-rose-400/80 text-[11px] mt-0.5">
+                    Please ensure you are facing the camera and no unauthorized devices are visible.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* System Status Indicators */}
+            <div className="mt-4 pt-4 border-t border-slate-800/80 space-y-2">
+              <div className="flex items-center justify-between text-xs text-slate-400">
+                <span>CV Microservice:</span>
+                <span className={cvConnected ? 'text-emerald-400 font-medium' : 'text-amber-400 font-medium'}>
+                  {cvConnected ? 'Connected (FastAPI)' : 'Standby / Local'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs text-slate-400">
+                <span>Temporal Window:</span>
+                <span className="text-slate-200">3 frames confirmation</span>
+              </div>
+              <div className="flex items-center justify-between text-xs text-slate-400">
+                <span>Focus Policy:</span>
+                <span className="text-slate-200">Strict Tab/Window Lock</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
