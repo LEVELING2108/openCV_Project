@@ -7,6 +7,7 @@ from typing import List, Optional, Dict, Any
 
 from app.services.face_detector import FaceDetector
 from app.services.object_detector import ObjectDetector
+from app.services.pose_and_quality_detector import PoseAndQualityDetector
 from app.services.temporal_tracker import temporal_tracker
 from app.core.config import settings
 
@@ -14,18 +15,13 @@ router = APIRouter()
 
 face_detector = FaceDetector()
 object_detector = ObjectDetector()
+pose_quality_detector = PoseAndQualityDetector()
 
 class FrameAnalysisRequest(BaseModel):
     session_id: str = Field(..., description="Unique exam session identifier")
     image_base64: str = Field(..., description="Base64-encoded JPEG/PNG frame")
     student_id: Optional[str] = None
     exam_id: Optional[str] = None
-
-class BoundingBox(BaseModel):
-    x1: Optional[int] = None
-    y1: Optional[int] = None
-    x2: Optional[int] = None
-    y2: Optional[int] = None
 
 class DetectionItem(BaseModel):
     label: str
@@ -45,13 +41,14 @@ class FrameAnalysisResponse(BaseModel):
     face_missing: bool
     multiple_faces: bool
     phone_detected: bool
+    looking_away: bool
+    camera_blocked: bool
     detections: List[DetectionItem]
     confirmed_events: List[ConfirmedEvent]
     status: str
 
 def decode_base64_image(base64_str: str) -> np.ndarray:
     try:
-        # Strip header if present (e.g. data:image/jpeg;base64,)
         if "," in base64_str:
             base64_str = base64_str.split(",", 1)[1]
         image_bytes = base64.b64decode(base64_str)
@@ -67,28 +64,45 @@ def decode_base64_image(base64_str: str) -> np.ndarray:
 async def analyze_frame(payload: FrameAnalysisRequest):
     frame = decode_base64_image(payload.image_base64)
 
-    # 1. Tier 1: Cheap OpenCV Face Detection
+    # 1. Camera Quality & Occlusion Check
+    quality_result = pose_quality_detector.check_camera_quality(frame)
+    camera_blocked = quality_result["camera_blocked"]
+
+    # 2. Fast OpenCV Face Detection
     face_results = face_detector.detect_faces(frame)
     face_missing = face_results["face_missing"]
     multiple_faces = face_results["multiple_faces"]
 
-    # 2. Tier 2: YOLO Object & Person Detection
+    # 3. Head Pose / Looking Away Deviation
+    looking_away = False
+    if face_results["face_count"] == 1:
+        pose_result = pose_quality_detector.estimate_looking_away(frame, face_results["boxes"][0])
+        looking_away = pose_result.get("looking_away", False)
+
+    # 4. YOLO Object & Person Detection
     obj_results = object_detector.detect_objects(frame)
     phone_detected = obj_results["phone_detected"]
     if obj_results["person_count"] > 1:
         multiple_faces = True
 
     confidence_map = {}
-    for d in obj_results["detections"]:
-        if d["label"] == "cell phone":
-            confidence_map["PHONE_DETECTED"] = d["confidence"]
+    if phone_detected:
+        for d in obj_results["detections"]:
+            if d["label"] == "cell phone":
+                confidence_map["PHONE_DETECTED"] = d["confidence"]
+    if looking_away:
+        confidence_map["EXCESSIVE_LOOKING_AWAY"] = 0.85
+    if camera_blocked:
+        confidence_map["CAMERA_BLOCKED"] = 0.95
 
-    # 3. Temporal Confirmation & False Positive Suppression
+    # 5. Temporal Confirmation & Cooldowns
     confirmed = temporal_tracker.evaluate_signals(
         session_id=payload.session_id,
         face_missing=face_missing,
         multiple_faces=multiple_faces,
         phone_detected=phone_detected,
+        looking_away=looking_away,
+        camera_blocked=camera_blocked,
         confidence_map=confidence_map
     )
 
@@ -114,6 +128,8 @@ async def analyze_frame(payload: FrameAnalysisRequest):
         face_missing=face_missing,
         multiple_faces=multiple_faces,
         phone_detected=phone_detected,
+        looking_away=looking_away,
+        camera_blocked=camera_blocked,
         detections=formatted_detections,
         confirmed_events=formatted_events,
         status="success"
@@ -126,6 +142,7 @@ async def health_check():
         "service": settings.PROJECT_NAME,
         "models": {
             "yolo": settings.YOLO_MODEL,
-            "face_cascade": "OpenCV Haar Cascade"
+            "face_cascade": "OpenCV Haar Cascade",
+            "eye_cascade": "OpenCV Eye Haar Cascade"
         }
     }
