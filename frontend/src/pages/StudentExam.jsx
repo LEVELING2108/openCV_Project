@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Shield, Camera, AlertTriangle, CheckCircle2, Clock, Eye, AlertCircle } from 'lucide-react';
+import { Shield, Camera, AlertTriangle, CheckCircle2, Clock, Eye, AlertCircle, Sparkles } from 'lucide-react';
 import axios from 'axios';
 
 const SAMPLE_QUESTIONS = [
@@ -28,8 +28,13 @@ export default function StudentExam() {
   const [timeLeft, setTimeLeft] = useState(1800); // 30 minutes
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [lastWarning, setLastWarning] = useState(null);
-  const [statusMessage, setStatusMessage] = useState('Camera initializing...');
   const [cvConnected, setCvConnected] = useState(false);
+  const [telemetry, setTelemetry] = useState({
+    faceCount: 1,
+    lookingAway: false,
+    cameraBlocked: false,
+    phoneDetected: false,
+  });
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -55,11 +60,9 @@ export default function StudentExam() {
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           setIsCameraActive(true);
-          setStatusMessage('AI Proctoring Active & Secure');
         }
       } catch (err) {
         console.error('Camera access denied:', err);
-        setStatusMessage('⚠️ Camera access denied! Required for proctoring.');
       }
     };
 
@@ -98,15 +101,26 @@ export default function StudentExam() {
           });
 
           setCvConnected(true);
+          const data = res.data;
 
-          if (res.data.confirmed_events && res.data.confirmed_events.length > 0) {
-            const latest = res.data.confirmed_events[0];
-            setLastWarning(`Alert: ${latest.event_type.replace('_', ' ')} detected!`);
+          setTelemetry({
+            faceCount: data.face_count,
+            lookingAway: data.looking_away,
+            cameraBlocked: data.camera_blocked,
+            phoneDetected: data.phone_detected,
+          });
+
+          if (data.confirmed_events && data.confirmed_events.length > 0) {
+            const latest = data.confirmed_events[0];
+            setLastWarning(`Alert: ${latest.event_type.replace(/_/g, ' ')} detected!`);
+          } else if (data.looking_away) {
+            setLastWarning('Advisory: Please look directly at your screen.');
+          } else if (data.camera_blocked) {
+            setLastWarning('Warning: Camera obstructed or lighting too low.');
           } else {
             setLastWarning(null);
           }
         } catch (err) {
-          // CV microservice not yet running or network blip
           setCvConnected(false);
         }
       }
@@ -119,7 +133,7 @@ export default function StudentExam() {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        setLastWarning('Warning: Tab switch or focus lost detected!');
+        setLastWarning('Warning: Tab switch / browser window lost focus!');
       }
     };
 
@@ -248,23 +262,23 @@ export default function StudentExam() {
           </div>
         </div>
 
-        {/* Proctoring Video & Status Feed (1 Col) */}
+        {/* Proctoring Video & Real-time CV Feed (1 Col) */}
         <div className="space-y-6">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Camera className="w-4 h-4 text-indigo-400" />
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-200">
-                  Live Camera Feed
+                  AI Proctoring Feed
                 </span>
               </div>
               <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                Monitoring
+                Active
               </span>
             </div>
 
-            {/* Video Container */}
+            {/* Video Stream */}
             <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-950 border border-slate-800 flex items-center justify-center">
               <video
                 ref={videoRef}
@@ -283,34 +297,46 @@ export default function StudentExam() {
               )}
             </div>
 
-            {/* Warning / Alert Notice */}
+            {/* Real-time Warning Banner */}
             {lastWarning && (
               <div className="mt-3 p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-start gap-2.5 text-rose-400 text-xs animate-shake">
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                 <div>
                   <p className="font-semibold">{lastWarning}</p>
                   <p className="text-rose-400/80 text-[11px] mt-0.5">
-                    Please ensure you are facing the camera and no unauthorized devices are visible.
+                    Maintain eye contact with the screen. Suspicious events are logged for examiner review.
                   </p>
                 </div>
               </div>
             )}
 
+            {/* Telemetry & Signal Badges */}
+            <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+              <div className="p-2 bg-slate-950/70 border border-slate-800 rounded-lg flex flex-col gap-1">
+                <span className="text-slate-400 text-[11px]">Face Status</span>
+                <span className={telemetry.faceCount === 1 ? 'text-emerald-400 font-medium' : 'text-rose-400 font-medium'}>
+                  {telemetry.faceCount === 1 ? '1 Face Detected' : telemetry.faceCount === 0 ? 'No Face Found' : `${telemetry.faceCount} Faces Detected`}
+                </span>
+              </div>
+              <div className="p-2 bg-slate-950/70 border border-slate-800 rounded-lg flex flex-col gap-1">
+                <span className="text-slate-400 text-[11px]">Head Pose</span>
+                <span className={!telemetry.lookingAway ? 'text-emerald-400 font-medium' : 'text-amber-400 font-medium'}>
+                  {!telemetry.lookingAway ? 'Facing Screen' : 'Looking Away'}
+                </span>
+              </div>
+            </div>
+
             {/* System Status Indicators */}
-            <div className="mt-4 pt-4 border-t border-slate-800/80 space-y-2">
+            <div className="mt-4 pt-3 border-t border-slate-800/80 space-y-2">
               <div className="flex items-center justify-between text-xs text-slate-400">
                 <span>CV Microservice:</span>
                 <span className={cvConnected ? 'text-emerald-400 font-medium' : 'text-amber-400 font-medium'}>
-                  {cvConnected ? 'Connected (FastAPI)' : 'Standby / Local'}
+                  {cvConnected ? 'Connected (FastAPI + YOLO)' : 'Connecting...'}
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs text-slate-400">
-                <span>Temporal Window:</span>
-                <span className="text-slate-200">3 frames confirmation</span>
-              </div>
-              <div className="flex items-center justify-between text-xs text-slate-400">
-                <span>Focus Policy:</span>
-                <span className="text-slate-200">Strict Tab/Window Lock</span>
+                <span>Sampling Rate:</span>
+                <span className="text-slate-200">0.5 Hz (every 2s)</span>
               </div>
             </div>
           </div>
