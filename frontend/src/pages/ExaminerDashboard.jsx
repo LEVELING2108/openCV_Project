@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Shield, Users, AlertTriangle, CheckCircle, XCircle, Search, Filter, Plus, Clock, BookOpen, Trash2 } from 'lucide-react';
+import { Shield, Users, AlertTriangle, CheckCircle, XCircle, Search, Filter, Plus, Clock, BookOpen, Trash2, Bell, Radio } from 'lucide-react';
+import { io } from 'socket.io-client';
 
 const INITIAL_CANDIDATES = [
   {
@@ -10,7 +11,7 @@ const INITIAL_CANDIDATES = [
     status: 'ACTIVE',
     riskScore: 40,
     lastEvent: 'PHONE_DETECTED',
-    lastEventTime: '2 mins ago',
+    lastEventTime: 'Just now',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
     history: [
       { id: 'ev_1', type: 'PHONE_DETECTED', weight: 40, time: '10:42:15 AM', status: 'UNREVIEWED' }
@@ -61,6 +62,8 @@ export default function ExaminerDashboard() {
   const [selectedCandidate, setSelectedCandidate] = useState(INITIAL_CANDIDATES[0]);
   const [filterRisk, setFilterRisk] = useState('ALL');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [socketStatus, setSocketStatus] = useState('Connecting');
+  const [liveAlertCount, setLiveAlertCount] = useState(0);
 
   // New Exam Form State
   const [examForm, setExamForm] = useState({
@@ -80,6 +83,62 @@ export default function ExaminerDashboard() {
       }
     ]
   });
+
+  // Socket.IO Real-Time Listener
+  useEffect(() => {
+    const socket = io('http://localhost:5000', {
+      transports: ['websocket', 'polling'],
+    });
+
+    socket.on('connect', () => {
+      setSocketStatus('Live');
+      socket.emit('session:join', {
+        sessionId: 'global_examiner',
+        role: 'examiner',
+        userId: user?._id || 'examiner_1',
+      });
+    });
+
+    socket.on('disconnect', () => {
+      setSocketStatus('Offline');
+    });
+
+    // Real-time proctor alert listener
+    socket.on('proctor:alert', (alertData) => {
+      setLiveAlertCount((prev) => prev + 1);
+
+      setCandidates((prev) => {
+        const targetId = alertData.candidateId || 'cand_1';
+        return prev.map((c) => {
+          if (c.id === targetId || c.name === alertData.studentName) {
+            const newEvent = {
+              id: 'ev_' + Date.now(),
+              type: alertData.eventType,
+              weight: alertData.riskScore || alertData.riskWeight || 10,
+              time: new Date().toLocaleTimeString(),
+              status: 'UNREVIEWED',
+            };
+            const updatedCand = {
+              ...c,
+              riskScore: c.riskScore + (alertData.riskScore || alertData.riskWeight || 10),
+              lastEvent: alertData.eventType,
+              lastEventTime: 'Just now',
+              history: [newEvent, ...c.history],
+            };
+            if (selectedCandidate.id === c.id) {
+              setSelectedCandidate(updatedCand);
+            }
+            return updatedCand;
+          }
+          return c;
+        });
+      });
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [selectedCandidate.id, user]);
 
   const getRiskBadge = (score) => {
     if (score >= 40) {
@@ -134,6 +193,12 @@ export default function ExaminerDashboard() {
     setIsCreateModalOpen(false);
   };
 
+  const filteredCandidates = candidates.filter((c) => {
+    if (filterRisk === 'HIGH') return c.riskScore >= 40;
+    if (filterRisk === 'MEDIUM') return c.riskScore >= 20 && c.riskScore < 40;
+    return true;
+  });
+
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col">
       {/* Examiner Header */}
@@ -149,6 +214,11 @@ export default function ExaminerDashboard() {
         </div>
 
         <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-xs">
+            <Radio className={`w-3.5 h-3.5 ${socketStatus === 'Live' ? 'text-emerald-400 animate-pulse' : 'text-amber-400'}`} />
+            <span className="text-slate-300">Live Socket: <strong className={socketStatus === 'Live' ? 'text-emerald-400' : 'text-amber-400'}>{socketStatus}</strong></span>
+          </div>
+
           <button
             onClick={() => setIsCreateModalOpen(true)}
             className="flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-medium transition shadow-sm"
@@ -177,12 +247,12 @@ export default function ExaminerDashboard() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-indigo-400" />
-              <h2 className="text-sm font-semibold text-slate-200">Active Exam Sessions ({candidates.length})</h2>
+              <h2 className="text-sm font-semibold text-slate-200">Active Exam Sessions ({filteredCandidates.length})</h2>
             </div>
 
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setFilterRisk(filterRisk === 'ALL' ? 'HIGH' : 'ALL')}
+                onClick={() => setFilterRisk(filterRisk === 'ALL' ? 'HIGH' : filterRisk === 'HIGH' ? 'MEDIUM' : 'ALL')}
                 className="px-2.5 py-1 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-300 hover:bg-slate-800 transition flex items-center gap-1.5"
               >
                 <Filter className="w-3.5 h-3.5 text-slate-400" />
@@ -192,7 +262,7 @@ export default function ExaminerDashboard() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {candidates.map((candidate) => {
+            {filteredCandidates.map((candidate) => {
               const isSelected = selectedCandidate.id === candidate.id;
               return (
                 <div
@@ -247,7 +317,7 @@ export default function ExaminerDashboard() {
                     No suspicious anomalies detected in this session.
                   </div>
                 ) : (
-                  <div className="space-y-2.5">
+                  <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
                     {selectedCandidate.history.map((ev) => (
                       <div
                         key={ev.id}
@@ -257,7 +327,7 @@ export default function ExaminerDashboard() {
                           <div className="flex items-center gap-2">
                             <AlertTriangle className="w-4 h-4 text-amber-400" />
                             <span className="text-xs font-semibold text-slate-200">
-                              {ev.type.replace('_', ' ')}
+                              {ev.type.replace(/_/g, ' ')}
                             </span>
                           </div>
                           <span className="text-[11px] font-mono text-slate-400">{ev.time}</span>

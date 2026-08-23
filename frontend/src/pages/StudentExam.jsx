@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Shield, Camera, AlertTriangle, CheckCircle2, Clock, Eye, AlertCircle, Sparkles } from 'lucide-react';
+import { Shield, Camera, AlertTriangle, CheckCircle2, Clock, Eye, AlertCircle, Sparkles, Wifi } from 'lucide-react';
 import axios from 'axios';
+import { io } from 'socket.io-client';
 
 const SAMPLE_QUESTIONS = [
   {
@@ -29,6 +30,7 @@ export default function StudentExam() {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [lastWarning, setLastWarning] = useState(null);
   const [cvConnected, setCvConnected] = useState(false);
+  const [socketConnected, setSocketConnected] = useState(false);
   const [telemetry, setTelemetry] = useState({
     faceCount: 1,
     lookingAway: false,
@@ -38,6 +40,7 @@ export default function StudentExam() {
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+  const socketRef = useRef(null);
   const sessionId = useRef(`sess_${user?._id || 'demo'}_${Date.now()}`);
 
   // Countdown timer
@@ -47,6 +50,44 @@ export default function StudentExam() {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Socket.IO Setup & Heartbeat
+  useEffect(() => {
+    const socket = io('http://localhost:5000', {
+      transports: ['websocket', 'polling'],
+    });
+
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      setSocketConnected(true);
+      socket.emit('session:join', {
+        sessionId: sessionId.current,
+        role: 'student',
+        userId: user?._id || 'demo_student',
+      });
+    });
+
+    socket.on('disconnect', () => {
+      setSocketConnected(false);
+    });
+
+    // Send heartbeat every 5 seconds
+    const heartbeatInterval = setInterval(() => {
+      if (socket.connected) {
+        socket.emit('session:heartbeat', {
+          sessionId: sessionId.current,
+          timestamp: new Date().toISOString(),
+          status: 'ACTIVE',
+        });
+      }
+    }, 5000);
+
+    return () => {
+      clearInterval(heartbeatInterval);
+      socket.disconnect();
+    };
+  }, [user]);
 
   // Initialize Camera
   useEffect(() => {
@@ -110,9 +151,25 @@ export default function StudentExam() {
             phoneDetected: data.phone_detected,
           });
 
+          // If events confirmed, broadcast to examiner and display warning
           if (data.confirmed_events && data.confirmed_events.length > 0) {
             const latest = data.confirmed_events[0];
             setLastWarning(`Alert: ${latest.event_type.replace(/_/g, ' ')} detected!`);
+
+            // Emit to backend socket for real-time examiner notification
+            if (socketRef.current && socketRef.current.connected) {
+              socketRef.current.emit('proctor:event', {
+                sessionId: sessionId.current,
+                eventType: latest.event_type,
+                confidence: latest.confidence,
+                riskScore: latest.risk_weight,
+                studentName: user?.name || 'Alex Rivera',
+                evidence: {
+                  snapshotThumbnail: base64Image.substring(0, 100) + '...',
+                  timestamp: new Date().toISOString(),
+                }
+              });
+            }
           } else if (data.looking_away) {
             setLastWarning('Advisory: Please look directly at your screen.');
           } else if (data.camera_blocked) {
@@ -134,12 +191,21 @@ export default function StudentExam() {
     const handleVisibilityChange = () => {
       if (document.hidden) {
         setLastWarning('Warning: Tab switch / browser window lost focus!');
+        if (socketRef.current && socketRef.current.connected) {
+          socketRef.current.emit('proctor:event', {
+            sessionId: sessionId.current,
+            eventType: 'TAB_FOCUS_LOST',
+            confidence: 1.0,
+            riskScore: 10,
+            studentName: user?.name || 'Alex Rivera',
+          });
+        }
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, []);
+  }, [user]);
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
@@ -335,8 +401,10 @@ export default function StudentExam() {
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs text-slate-400">
-                <span>Sampling Rate:</span>
-                <span className="text-slate-200">0.5 Hz (every 2s)</span>
+                <span>Real-time Gateway:</span>
+                <span className={socketConnected ? 'text-emerald-400 font-medium' : 'text-amber-400 font-medium'}>
+                  {socketConnected ? 'Connected (Socket.IO)' : 'Offline'}
+                </span>
               </div>
             </div>
           </div>
