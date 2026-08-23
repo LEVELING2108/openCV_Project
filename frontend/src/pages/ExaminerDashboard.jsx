@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Shield, Users, AlertTriangle, CheckCircle, XCircle, Search, Filter, RefreshCw, Smartphone, UserX, UserPlus, EyeOff } from 'lucide-react';
+import { Shield, Users, AlertTriangle, CheckCircle, XCircle, Search, Filter, Plus, Clock, BookOpen, Trash2 } from 'lucide-react';
 
 const INITIAL_CANDIDATES = [
   {
@@ -60,6 +60,26 @@ export default function ExaminerDashboard() {
   const [candidates, setCandidates] = useState(INITIAL_CANDIDATES);
   const [selectedCandidate, setSelectedCandidate] = useState(INITIAL_CANDIDATES[0]);
   const [filterRisk, setFilterRisk] = useState('ALL');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  // New Exam Form State
+  const [examForm, setExamForm] = useState({
+    title: 'CS501: Advanced Computer Vision & Deep Learning',
+    description: 'Midterm Examination covering OpenCV, YOLO, and Neural Architectures.',
+    durationMinutes: 45,
+    randomizeQuestions: true,
+    questions: [
+      {
+        questionText: 'Which algorithm is commonly used for real-time face detection with Haar feature cascades?',
+        options: [
+          { text: 'Viola-Jones', isCorrect: true },
+          { text: 'Dijkstra', isCorrect: false },
+          { text: 'K-Means', isCorrect: false },
+          { text: 'PageRank', isCorrect: false },
+        ]
+      }
+    ]
+  });
 
   const getRiskBadge = (score) => {
     if (score >= 40) {
@@ -90,6 +110,30 @@ export default function ExaminerDashboard() {
     );
   };
 
+  const handleAddQuestion = () => {
+    setExamForm({
+      ...examForm,
+      questions: [
+        ...examForm.questions,
+        {
+          questionText: '',
+          options: [
+            { text: '', isCorrect: true },
+            { text: '', isCorrect: false },
+            { text: '', isCorrect: false },
+            { text: '', isCorrect: false },
+          ]
+        }
+      ]
+    });
+  };
+
+  const handleCreateExam = (e) => {
+    e.preventDefault();
+    alert(`Exam "${examForm.title}" created successfully with ${examForm.questions.length} questions!`);
+    setIsCreateModalOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col">
       {/* Examiner Header */}
@@ -105,6 +149,14 @@ export default function ExaminerDashboard() {
         </div>
 
         <div className="flex items-center gap-4">
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-medium transition shadow-sm"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Create Exam
+          </button>
+
           <div className="text-right">
             <p className="text-xs font-medium text-slate-200">{user?.name || 'Examiner Marcus'}</p>
             <p className="text-[11px] text-slate-400">Role: Senior Proctor</p>
@@ -244,6 +296,122 @@ export default function ExaminerDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Create Exam Modal */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-5">
+              <div className="flex items-center gap-2.5">
+                <BookOpen className="w-5 h-5 text-indigo-400" />
+                <h3 className="text-base font-semibold text-white">Create New Examination</h3>
+              </div>
+              <button
+                onClick={() => setIsCreateModalOpen(false)}
+                className="text-slate-400 hover:text-slate-200 text-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateExam} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                  Exam Title
+                </label>
+                <input
+                  type="text"
+                  value={examForm.title}
+                  onChange={(e) => setExamForm({ ...examForm, title: e.target.value })}
+                  required
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                    Duration (Minutes)
+                  </label>
+                  <input
+                    type="number"
+                    value={examForm.durationMinutes}
+                    onChange={(e) => setExamForm({ ...examForm, durationMinutes: Number(e.target.value) })}
+                    min="5"
+                    required
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+                <div className="flex items-center pt-6">
+                  <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={examForm.randomizeQuestions}
+                      onChange={(e) => setExamForm({ ...examForm, randomizeQuestions: e.target.checked })}
+                      className="rounded bg-slate-950 border-slate-800 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    Randomize Question Sequence
+                  </label>
+                </div>
+              </div>
+
+              {/* Questions Section */}
+              <div className="pt-3 border-t border-slate-800">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    Question Bank ({examForm.questions.length})
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleAddQuestion}
+                    className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-medium"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add Question
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {examForm.questions.map((q, qIndex) => (
+                    <div key={qIndex} className="p-4 bg-slate-950/80 border border-slate-800 rounded-xl space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-indigo-400">Question {qIndex + 1}</span>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Enter question statement..."
+                        value={q.questionText}
+                        onChange={(e) => {
+                          const updated = [...examForm.questions];
+                          updated[qIndex].questionText = e.target.value;
+                          setExamForm({ ...examForm, questions: updated });
+                        }}
+                        required
+                        className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="px-4 py-2 rounded-lg border border-slate-700 text-xs text-slate-300 hover:bg-slate-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-medium text-white shadow-sm"
+                >
+                  Save & Publish Exam
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

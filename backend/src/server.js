@@ -8,6 +8,9 @@ require('dotenv').config();
 
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
+const examRoutes = require('./routes/examRoutes');
+const sessionRoutes = require('./routes/sessionRoutes');
+const proctorRoutes = require('./routes/proctorRoutes');
 const setupSocket = require('./socket/socketHandler');
 
 const app = express();
@@ -43,6 +46,9 @@ app.use((req, res, next) => {
 
 // API Routes
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/exams', examRoutes);
+app.use('/api/v1/sessions', sessionRoutes);
+app.use('/api/v1/proctoring', proctorRoutes);
 
 // Health Check Endpoint
 app.get('/api/v1/health', (req, res) => {
