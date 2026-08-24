@@ -47,11 +47,11 @@ class TemporalTracker:
 
         # Consecutive frames required before trigger
         trigger_thresholds = {
-            "PHONE_DETECTED": 2,
-            "MULTIPLE_FACES": 3,
-            "CAMERA_BLOCKED": 3,
-            "FACE_MISSING": 4,
-            "EXCESSIVE_LOOKING_AWAY": 4,
+            "PHONE_DETECTED": 1,
+            "MULTIPLE_FACES": 2,
+            "CAMERA_BLOCKED": 2,
+            "FACE_MISSING": 3,
+            "EXCESSIVE_LOOKING_AWAY": 3,
         }
 
         for event_type, is_active in signals.items():
