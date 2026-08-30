@@ -7,23 +7,18 @@ export default function Login() {
   const [email, setEmail] = useState('student@examguard.io');
   const [password, setPassword] = useState('password123');
   const [role, setRole] = useState('student');
-  const { login } = useAuth();
+  const { login, authLoading, authError } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    const demoUser = {
-      _id: 'usr_' + Math.random().toString(36).substr(2, 9),
-      name: role === 'student' ? 'Alex Rivera' : 'Prof. Marcus Vance',
-      email,
-      role,
-      token: 'jwt_secure_session_token_' + Date.now(),
-    };
-    login(demoUser);
-    if (role === 'examiner' || role === 'admin') {
-      navigate('/dashboard');
-    } else {
-      navigate('/exam');
+    const result = await login(email, password, role);
+    if (result && result.success) {
+      if (role === 'examiner' || role === 'admin') {
+        navigate('/dashboard');
+      } else {
+        navigate('/exam');
+      }
     }
   };
 
