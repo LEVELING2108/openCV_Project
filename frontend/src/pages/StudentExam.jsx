@@ -678,6 +678,18 @@ export default function StudentExam() {
                   {!telemetry.cameraBlocked ? 'Clear / Optimal' : 'Obstructed'}
                 </span>
               </div>
+              <div className="p-2 bg-slate-950/70 border border-slate-800 rounded-lg flex flex-col gap-1">
+                <span className="text-slate-400 text-[11px]">Device Check</span>
+                <span className={!telemetry.phoneDetected ? 'text-emerald-400 font-medium' : 'text-rose-400 font-medium animate-pulse'}>
+                  {!telemetry.phoneDetected ? 'No Device' : '📱 Phone Detected!'}
+                </span>
+              </div>
+              <div className="p-2 bg-slate-950/70 border border-slate-800 rounded-lg flex flex-col gap-1">
+                <span className="text-slate-400 text-[11px]">Camera Integrity</span>
+                <span className={!telemetry.cameraBlocked ? 'text-emerald-400 font-medium' : 'text-rose-400 font-medium'}>
+                  {!telemetry.cameraBlocked ? 'Optimal' : 'Obstructed / Dark'}
+                </span>
+              </div>
             </div>
 
             {/* Activity Stream */}
