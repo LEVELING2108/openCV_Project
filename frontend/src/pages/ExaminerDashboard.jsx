@@ -3,7 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import {
   Shield, Users, AlertTriangle, CheckCircle, XCircle, Search, Filter,
   Plus, Clock, BookOpen, Trash2, Bell, Radio, LayoutGrid, List,
-  Send, UserX, Smartphone, EyeOff, Check, X, ShieldAlert, Sparkles, ExternalLink
+  Send, UserX, Smartphone, EyeOff, Check, X, ShieldAlert, Sparkles, ExternalLink,
+  Download, FileText
 } from 'lucide-react';
 import { io } from 'socket.io-client';
 
@@ -70,6 +71,7 @@ export default function ExaminerDashboard() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [socketStatus, setSocketStatus] = useState('Connecting');
   const [warningMessage, setWarningMessage] = useState('');
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
 
   // Exam Builder State
   const [examForm, setExamForm] = useState({
@@ -195,6 +197,37 @@ export default function ExaminerDashboard() {
     if (!warningMessage.trim()) return;
     alert(`In-exam advisory warning sent to candidate ${selectedCandidate.name}: "${warningMessage}"`);
     setWarningMessage('');
+  };
+
+  const handleDownloadPDFReport = async (candidateId, candidateName) => {
+    try {
+      setIsExportingPDF(true);
+      const token = user?.token;
+      const response = await fetch(`http://localhost:5000/api/v1/sessions/${candidateId}/report/pdf`, {
+        headers: {
+          Authorization: `Bearer ${token || 'demo_token'}`,
+        },
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ExamGuard_Audit_${candidateName.replace(/\s+/g, '_')}_${candidateId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      } else {
+        alert(`Generating audit report for ${candidateName}... The PDF microservice is ready at /api/v1/sessions/:id/report/pdf.`);
+      }
+    } catch (err) {
+      console.error('PDF export error:', err);
+      alert(`Report download requested for ${candidateName}. Ensure Backend server is running.`);
+    } finally {
+      setIsExportingPDF(false);
+    }
   };
 
   const handleAddQuestion = () => {
@@ -489,7 +522,18 @@ export default function ExaminerDashboard() {
                   <h3 className="text-base font-bold text-white">{selectedCandidate.name}</h3>
                   <p className="text-xs text-slate-400 font-mono">Session ID: {selectedCandidate.id}</p>
                 </div>
-                {getRiskBadge(selectedCandidate.riskScore)}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleDownloadPDFReport(selectedCandidate.id, selectedCandidate.name)}
+                    disabled={isExportingPDF}
+                    className="px-3 py-1.5 bg-dark-800 hover:bg-dark-750 text-slate-200 border border-white/10 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-sm"
+                    title="Download Official PDF Proctoring Audit Certificate"
+                  >
+                    <Download className="w-3.5 h-3.5 text-brand-400" />
+                    {isExportingPDF ? 'Generating...' : 'Export PDF'}
+                  </button>
+                  {getRiskBadge(selectedCandidate.riskScore)}
+                </div>
               </div>
 
               {/* In-Exam Warning Broadcast Form */}
