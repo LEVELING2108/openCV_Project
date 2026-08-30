@@ -22,6 +22,8 @@ class TemporalTracker:
         phone_detected: bool,
         looking_away: bool = False,
         camera_blocked: bool = False,
+        voice_detected: bool = False,
+        audio_burst: bool = False,
         confidence_map: Optional[Dict[str, float]] = None
     ) -> List[Dict[str, Any]]:
         now = time.time()
@@ -34,6 +36,8 @@ class TemporalTracker:
             "CAMERA_BLOCKED": camera_blocked,
             "FACE_MISSING": face_missing,
             "EXCESSIVE_LOOKING_AWAY": looking_away,
+            "VOICE_DETECTED": voice_detected,
+            "UNUSUAL_AUDIO_BURST": audio_burst,
         }
 
         # Cooldown intervals in seconds from specification
@@ -43,15 +47,19 @@ class TemporalTracker:
             "CAMERA_BLOCKED": 60,
             "FACE_MISSING": 15,
             "EXCESSIVE_LOOKING_AWAY": 30,
+            "VOICE_DETECTED": 25,
+            "UNUSUAL_AUDIO_BURST": 30,
         }
 
-        # Consecutive frames required before trigger
+        # Consecutive frames/chunks required before trigger
         trigger_thresholds = {
             "PHONE_DETECTED": 1,
             "MULTIPLE_FACES": 2,
             "CAMERA_BLOCKED": 2,
             "FACE_MISSING": 3,
             "EXCESSIVE_LOOKING_AWAY": 3,
+            "VOICE_DETECTED": 2,
+            "UNUSUAL_AUDIO_BURST": 1,
         }
 
         for event_type, is_active in signals.items():

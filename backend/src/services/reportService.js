@@ -177,36 +177,42 @@ const buildPDFDocument = (session, events = [], stream) => {
 
   const categories = [
     { label: 'Missing Face', key: 'FACE_MISSING' },
-    { label: 'Gaze / Head Away', key: 'EXCESSIVE_LOOKING_AWAY' },
+    { label: 'Gaze Deviation', key: 'EXCESSIVE_LOOKING_AWAY' },
     { label: 'Mobile Device', key: 'PHONE_DETECTED' },
     { label: 'Multiple Faces', key: 'MULTIPLE_FACES' },
+    { label: 'Voice / Speech', key: 'VOICE_DETECTED' },
+    { label: 'Multiple Voices', key: 'MULTIPLE_VOICES' },
     { label: 'Tab Focus Lost', key: 'TAB_FOCUS_LOST' },
     { label: 'Camera Blocked', key: 'CAMERA_BLOCKED' },
   ];
 
-  let catX = 40;
-  categories.forEach((cat) => {
+  const boxW = 124;
+  const boxH = 34;
+  categories.forEach((cat, index) => {
+    const row = Math.floor(index / 4);
+    const col = index % 4;
+    const x = 40 + col * (boxW + 6);
+    const y = categoryTop + 15 + row * (boxH + 6);
+
     const count = eventCounts[cat.key] || 0;
-    doc.rect(catX, categoryTop + 15, 80, 42).fill('#f1f5f9');
-    doc.rect(catX, categoryTop + 15, 80, 42).strokeColor('#cbd5e1').lineWidth(0.5).stroke();
+    doc.rect(x, y, boxW, boxH).fill('#f1f5f9');
+    doc.rect(x, y, boxW, boxH).strokeColor('#cbd5e1').lineWidth(0.5).stroke();
 
     doc
       .fillColor('#475569')
       .fontSize(7.5)
       .font('Helvetica-Bold')
-      .text(cat.label, catX + 2, categoryTop + 20, { width: 76, align: 'center' });
+      .text(cat.label, x + 2, y + 6, { width: boxW - 4, align: 'left', indent: 6 });
 
     doc
       .fillColor(count > 0 ? '#e11d48' : '#0f172a')
-      .fontSize(12)
+      .fontSize(11)
       .font('Helvetica-Bold')
-      .text(`${count}`, catX, categoryTop + 35, { width: 80, align: 'center' });
-
-    catX += 87;
+      .text(`${count}`, x + boxW - 32, y + 10, { width: 26, align: 'right' });
   });
 
   // --- 5. Chronological Incident Audit Trail Table ---
-  let tableTop = 395;
+  let tableTop = 418;
   doc
     .fillColor('#1e293b')
     .fontSize(10)
