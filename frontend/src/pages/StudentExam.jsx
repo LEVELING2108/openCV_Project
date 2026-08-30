@@ -178,6 +178,10 @@ export default function StudentExam() {
         });
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
+          videoRef.current.onloadedmetadata = () => {
+            videoRef.current?.play().catch(() => {});
+            setIsCameraActive(true);
+          };
           setIsCameraActive(true);
         }
 
@@ -225,6 +229,10 @@ export default function StudentExam() {
           });
           if (videoRef.current) {
             videoRef.current.srcObject = stream;
+            videoRef.current.onloadedmetadata = () => {
+              videoRef.current?.play().catch(() => {});
+              setIsCameraActive(true);
+            };
             setIsCameraActive(true);
           }
         } catch (videoErr) {
@@ -274,12 +282,13 @@ export default function StudentExam() {
           setCvConnected(true);
           const data = res.data;
 
-          setTelemetry({
-            faceCount: data.face_count,
-            lookingAway: data.looking_away,
-            cameraBlocked: data.camera_blocked,
-            phoneDetected: data.phone_detected,
-          });
+          setTelemetry((prev) => ({
+            ...prev,
+            faceCount: typeof data.face_count === 'number' ? data.face_count : (data.face_missing ? 0 : 1),
+            lookingAway: !!data.looking_away,
+            cameraBlocked: !!data.camera_blocked,
+            phoneDetected: !!data.phone_detected,
+          }));
 
           if (data.confirmed_events && data.confirmed_events.length > 0) {
             const latest = data.confirmed_events[0];
