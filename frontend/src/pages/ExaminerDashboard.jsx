@@ -8,6 +8,7 @@ import {
   Maximize2, Play, RefreshCw, UserCheck
 } from 'lucide-react';
 import { io } from 'socket.io-client';
+import ThemeToggle from '../components/ThemeToggle';
 
 const INITIAL_CANDIDATES = [
   {
@@ -450,35 +451,37 @@ export default function ExaminerDashboard() {
   const disqualifiedCount = candidates.filter((c) => c.status === 'DISQUALIFIED').length;
 
   return (
-    <div className="min-h-screen bg-dark-950 flex flex-col selection:bg-brand-500 selection:text-white">
+    <div className="min-h-screen bg-slate-50 dark:bg-dark-950 flex flex-col selection:bg-indigo-500 selection:text-white transition-colors duration-200">
       {/* Top Console Navigation Bar */}
-      <header className="border-b border-white/10 bg-dark-900/80 backdrop-blur px-6 lg:px-8 py-3.5 flex items-center justify-between sticky top-0 z-30">
+      <header className="border-b border-slate-200/80 dark:border-white/10 bg-white/95 dark:bg-dark-900/80 backdrop-blur px-6 lg:px-8 py-3.5 flex items-center justify-between sticky top-0 z-30 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-brand-500/15 border border-brand-500/30 rounded-xl text-brand-400 shadow-glow-indigo">
+          <div className="p-2.5 bg-indigo-50 dark:bg-brand-500/15 border border-indigo-200 dark:border-brand-500/30 rounded-2xl text-indigo-600 dark:text-brand-400 shadow-sm">
             <Shield className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-sm font-bold text-white tracking-tight flex items-center gap-2">
+            <h1 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
               Examiner Command Console
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300">
+              <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300">
                 PROCTOR ACTIVE
               </span>
             </h1>
-            <p className="text-[11px] text-slate-400">Exam: CS501 Advanced Computer Vision & AI</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">Exam: CS501 Advanced Computer Vision & AI</p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-dark-950/80 border border-white/10 text-xs">
-            <Radio className={`w-3.5 h-3.5 ${socketStatus === 'Live' ? 'text-emerald-400 animate-pulse' : 'text-amber-400'}`} />
-            <span className="text-slate-300">
-              Gateway: <strong className={socketStatus === 'Live' ? 'text-emerald-400' : 'text-amber-400'}>{socketStatus}</strong>
+          <div className="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-dark-950/80 border border-slate-200/80 dark:border-white/10 text-xs">
+            <Radio className={`w-3.5 h-3.5 ${socketStatus === 'Live' ? 'text-emerald-500 animate-pulse' : 'text-amber-500'}`} />
+            <span className="text-slate-600 dark:text-slate-300">
+              Gateway: <strong className={socketStatus === 'Live' ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-amber-600 dark:text-amber-400 font-semibold'}>{socketStatus}</strong>
             </span>
           </div>
 
+          <ThemeToggle />
+
           <button
             onClick={() => setIsBroadcastModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 rounded-xl text-xs font-semibold transition cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-amber-50 dark:bg-amber-500/15 hover:bg-amber-100 dark:hover:bg-amber-500/25 border border-amber-200 dark:border-amber-500/30 text-amber-800 dark:text-amber-300 rounded-xl text-xs font-semibold transition cursor-pointer shadow-sm"
           >
             <Megaphone className="w-4 h-4" />
             Broadcast Notice
@@ -486,20 +489,20 @@ export default function ExaminerDashboard() {
 
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold shadow-glow-indigo transition cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#635bff] hover:bg-[#5851ea] text-white rounded-xl text-xs font-semibold shadow-stripe-indigo transition cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Create Exam
           </button>
 
-          <div className="hidden md:block text-right border-l border-white/10 pl-4">
-            <p className="text-xs font-semibold text-white">{user?.name || 'Prof. Marcus Vance'}</p>
-            <p className="text-[11px] text-brand-400 font-medium">Chief Examiner</p>
+          <div className="hidden md:block text-right border-l border-slate-200 dark:border-white/10 pl-4">
+            <p className="text-xs font-semibold text-slate-900 dark:text-white">{user?.name || 'Prof. Marcus Vance'}</p>
+            <p className="text-[11px] text-indigo-600 dark:text-brand-400 font-medium">Chief Examiner</p>
           </div>
 
           <button
             onClick={logout}
-            className="px-3 py-1.5 rounded-xl border border-white/10 text-xs font-medium text-slate-300 hover:bg-dark-800 transition cursor-pointer"
+            className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 transition cursor-pointer"
           >
             Logout
           </button>
@@ -510,49 +513,49 @@ export default function ExaminerDashboard() {
       <div className="flex-1 p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-6">
         {/* Metric Analytics Ribbon */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="glass-panel p-5 rounded-2xl border border-white/10 shadow-lg flex items-center justify-between">
+          <div className="bg-white dark:bg-dark-900 p-5 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-stripe flex items-center justify-between">
             <div>
-              <p className="text-xs text-slate-400 font-medium">Active Cohort</p>
-              <h3 className="text-2xl font-bold text-white mt-1">{candidates.length} Students</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Active Cohort</p>
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{candidates.length} Students</h3>
             </div>
-            <div className="p-3 bg-brand-500/10 rounded-xl text-brand-400">
+            <div className="p-3 bg-indigo-50 dark:bg-brand-500/10 rounded-xl text-indigo-600 dark:text-brand-400">
               <Users className="w-6 h-6" />
             </div>
           </div>
 
-          <div className="glass-panel p-5 rounded-2xl border border-white/10 shadow-lg flex items-center justify-between">
+          <div className="bg-white dark:bg-dark-900 p-5 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-stripe flex items-center justify-between">
             <div>
-              <p className="text-xs text-slate-400 font-medium">High Risk Alerts</p>
-              <h3 className="text-2xl font-bold text-rose-400 mt-1">{highRiskCount} Flagged</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">High Risk Alerts</p>
+              <h3 className="text-2xl font-bold text-rose-600 dark:text-rose-400 mt-1">{highRiskCount} Flagged</h3>
             </div>
-            <div className="p-3 bg-rose-500/10 rounded-xl text-rose-400">
+            <div className="p-3 bg-rose-50 dark:bg-rose-500/10 rounded-xl text-rose-600 dark:text-rose-400">
               <ShieldAlert className="w-6 h-6" />
             </div>
           </div>
 
-          <div className="glass-panel p-5 rounded-2xl border border-white/10 shadow-lg flex items-center justify-between">
+          <div className="bg-white dark:bg-dark-900 p-5 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-stripe flex items-center justify-between">
             <div>
-              <p className="text-xs text-slate-400 font-medium">Moderate Attention</p>
-              <h3 className="text-2xl font-bold text-amber-400 mt-1">{mediumRiskCount} Under Watch</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Moderate Attention</p>
+              <h3 className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">{mediumRiskCount} Under Watch</h3>
             </div>
-            <div className="p-3 bg-amber-500/10 rounded-xl text-amber-400">
+            <div className="p-3 bg-amber-50 dark:bg-amber-500/10 rounded-xl text-amber-600 dark:text-amber-400">
               <AlertTriangle className="w-6 h-6" />
             </div>
           </div>
 
-          <div className="glass-panel p-5 rounded-2xl border border-white/10 shadow-lg flex items-center justify-between">
+          <div className="bg-white dark:bg-dark-900 p-5 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-stripe flex items-center justify-between">
             <div>
-              <p className="text-xs text-slate-400 font-medium">Verified Clean Sessions</p>
-              <h3 className="text-2xl font-bold text-emerald-400 mt-1">{normalCount}</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Verified Clean Sessions</p>
+              <h3 className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">{normalCount}</h3>
             </div>
-            <div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-400">
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl text-emerald-600 dark:text-emerald-400">
               <CheckCircle className="w-6 h-6" />
             </div>
           </div>
         </div>
 
         {/* Filter, Sort & View Density Controls */}
-        <div className="flex flex-wrap items-center justify-between gap-4 glass-panel p-4 rounded-2xl border border-white/10">
+        <div className="flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-dark-900 p-4 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm">
           <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
             <div className="relative flex-1 max-w-xs">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -561,20 +564,20 @@ export default function ExaminerDashboard() {
                 placeholder="Search candidate name, ID, email..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-dark-900 border border-white/10 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500"
+                className="w-full bg-slate-50 dark:bg-dark-950 border border-slate-200/80 dark:border-white/10 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
               />
             </div>
 
             {/* Risk Category Filters */}
-            <div className="flex items-center gap-1.5 p-1 bg-dark-900 rounded-xl border border-white/5 text-xs">
+            <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-dark-950 rounded-xl border border-slate-200/80 dark:border-white/5 text-xs">
               {['ALL', 'HIGH', 'MEDIUM', 'NORMAL'].map((risk) => (
                 <button
                   key={risk}
                   onClick={() => setFilterRisk(risk)}
                   className={`px-3 py-1.5 rounded-lg font-medium transition cursor-pointer ${
                     filterRisk === risk
-                      ? 'bg-brand-600 text-white shadow-glow-indigo'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-white dark:bg-brand-600 text-slate-900 dark:text-white shadow-sm font-semibold'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 >
                   {risk}
@@ -583,12 +586,12 @@ export default function ExaminerDashboard() {
             </div>
 
             {/* Priority Queue Sorting */}
-            <div className="flex items-center gap-2 pl-2 border-l border-white/10 text-xs">
+            <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-white/10 text-xs">
               <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="bg-dark-900 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-brand-500 cursor-pointer"
+                className="bg-slate-50 dark:bg-dark-950 border border-slate-200/80 dark:border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-600 cursor-pointer"
               >
                 <option value="RISK_DESC">Highest Risk First (Priority Queue)</option>
                 <option value="RISK_ASC">Lowest Risk First</option>
@@ -598,33 +601,39 @@ export default function ExaminerDashboard() {
           </div>
 
           {/* View Modes */}
-          <div className="flex items-center gap-1 p-1 bg-dark-900 rounded-xl border border-white/5">
+          <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-dark-950 rounded-xl border border-slate-200/80 dark:border-white/5 text-xs">
             <button
               onClick={() => setViewMode('split')}
-              className={`p-2 rounded-lg transition cursor-pointer ${
-                viewMode === 'split' ? 'bg-brand-600 text-white shadow-glow-indigo' : 'text-slate-400 hover:text-white'
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition cursor-pointer ${
+                viewMode === 'split'
+                  ? 'bg-white dark:bg-brand-600 text-slate-900 dark:text-white shadow-sm font-semibold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
-              title="Split Inspector View"
             >
-              <LayoutGrid className="w-4 h-4" />
+              <LayoutGrid className="w-3.5 h-3.5" />
+              Split View
             </button>
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-lg transition cursor-pointer ${
-                viewMode === 'grid' ? 'bg-brand-600 text-white shadow-glow-indigo' : 'text-slate-400 hover:text-white'
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition cursor-pointer ${
+                viewMode === 'grid'
+                  ? 'bg-white dark:bg-brand-600 text-slate-900 dark:text-white shadow-sm font-semibold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
-              title="Full Multi-Student Matrix Grid"
             >
-              <Users className="w-4 h-4" />
+              <LayoutGrid className="w-3.5 h-3.5" />
+              Matrix Grid
             </button>
             <button
               onClick={() => setViewMode('table')}
-              className={`p-2 rounded-lg transition cursor-pointer ${
-                viewMode === 'table' ? 'bg-brand-600 text-white shadow-glow-indigo' : 'text-slate-400 hover:text-white'
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition cursor-pointer ${
+                viewMode === 'table'
+                  ? 'bg-white dark:bg-brand-600 text-slate-900 dark:text-white shadow-sm font-semibold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
-              title="Table Audit List"
             >
-              <List className="w-4 h-4" />
+              <List className="w-3.5 h-3.5" />
+              Table
             </button>
           </div>
         </div>
@@ -635,10 +644,10 @@ export default function ExaminerDashboard() {
             {/* Candidate Queue (7 Cols) */}
             <div className="lg:col-span-7 space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Candidate Stream Matrix ({processedCandidates.length})
                 </h3>
-                <span className="text-[11px] font-mono text-brand-400">Auto-Sorted by Priority</span>
+                <span className="text-[11px] font-mono text-indigo-600 dark:text-brand-400 font-semibold">Auto-Sorted by Priority</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[780px] overflow-y-auto pr-1">
@@ -651,69 +660,69 @@ export default function ExaminerDashboard() {
                     <div
                       key={candidate.id}
                       onClick={() => setSelectedCandidate(candidate)}
-                      className={`glass-panel p-4 rounded-2xl border transition relative group cursor-pointer flex flex-col justify-between space-y-3 ${
+                      className={`p-4 rounded-2xl border transition-all duration-200 relative group cursor-pointer flex flex-col justify-between space-y-3 ${
                         isDisqualified
-                          ? 'border-rose-900/50 bg-rose-950/20 opacity-70'
+                          ? 'border-rose-300 dark:border-rose-900/50 bg-rose-50/70 dark:bg-rose-950/20 opacity-75'
                           : isSelected
-                          ? 'border-brand-500 bg-brand-900/20 shadow-glow-indigo ring-1 ring-brand-400/50'
+                          ? 'border-indigo-600 dark:border-brand-500 bg-indigo-50/80 dark:bg-brand-900/20 shadow-stripe-indigo ring-1 ring-indigo-500/50'
                           : isHighRisk
-                          ? 'border-rose-500/50 bg-rose-950/20 hover:border-rose-500 shadow-glow-rose'
-                          : 'border-white/10 hover:border-white/20 hover:bg-dark-850/60'
+                          ? 'border-rose-300 dark:border-rose-500/50 bg-rose-50/40 dark:bg-rose-950/20 hover:border-rose-500 shadow-sm'
+                          : 'bg-white dark:bg-dark-900 border-slate-200/80 dark:border-white/10 hover:border-indigo-300 dark:hover:border-white/20 shadow-stripe hover:shadow-stripe-lg'
                       }`}
                     >
                       {/* Top Bar with Avatar & Live HUD badges */}
                       <div className="flex items-start gap-3">
-                        <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-white/10">
+                        <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-slate-200 dark:border-white/10">
                           <img
                             src={candidate.avatar}
                             alt={candidate.name}
                             className="w-full h-full object-cover"
                           />
                           <span
-                            className={`w-3 h-3 rounded-full absolute bottom-0.5 right-0.5 border-2 border-dark-950 ${
+                            className={`w-3 h-3 rounded-full absolute bottom-0.5 right-0.5 border-2 border-white dark:border-dark-950 ${
                               isDisqualified
                                 ? 'bg-rose-600'
                                 : candidate.status === 'ACTIVE'
-                                ? 'bg-emerald-400'
-                                : 'bg-slate-500'
+                                ? 'bg-emerald-500'
+                                : 'bg-slate-400'
                             }`}
                           />
                         </div>
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
-                            <h4 className="text-xs font-bold text-white truncate">{candidate.name}</h4>
+                            <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">{candidate.name}</h4>
                             {isDisqualified ? (
-                              <span className="px-2 py-0.5 bg-rose-500/20 text-rose-300 border border-rose-500/40 rounded text-[10px] font-bold">
+                              <span className="px-2 py-0.5 bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-500/40 rounded text-[10px] font-bold">
                                 VOID
                               </span>
                             ) : (
                               getRiskBadge(candidate.riskScore)
                             )}
                           </div>
-                          <p className="text-[11px] text-slate-400 truncate">{candidate.email}</p>
-                          <p className="text-[10px] font-mono text-slate-500 mt-0.5">ID: {candidate.id}</p>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{candidate.email}</p>
+                          <p className="text-[10px] font-mono text-slate-400 dark:text-slate-500 mt-0.5">ID: {candidate.id}</p>
                         </div>
                       </div>
 
                       {/* Mini Live Signal HUD */}
-                      <div className="grid grid-cols-2 gap-1.5 text-[10px] pt-2 border-t border-white/5">
-                        <div className="p-1.5 rounded-lg bg-dark-950/80 flex items-center justify-between">
-                          <span className="text-slate-400">Audio:</span>
-                          <span className={candidate.audioLevel > 35 ? 'text-amber-300 font-semibold' : 'text-emerald-400'}>
+                      <div className="grid grid-cols-2 gap-1.5 text-[10px] pt-2 border-t border-slate-100 dark:border-white/5">
+                        <div className="p-1.5 rounded-lg bg-slate-50 dark:bg-dark-950 flex items-center justify-between border border-slate-200/50 dark:border-transparent">
+                          <span className="text-slate-500 dark:text-slate-400">Audio:</span>
+                          <span className={candidate.audioLevel > 35 ? 'text-amber-600 dark:text-amber-300 font-bold' : 'text-emerald-600 dark:text-emerald-400 font-semibold'}>
                             {candidate.audioLevel}% dB
                           </span>
                         </div>
-                        <div className="p-1.5 rounded-lg bg-dark-950/80 flex items-center justify-between">
-                          <span className="text-slate-400">Recent:</span>
-                          <span className="text-slate-300 truncate max-w-[70px]">{candidate.lastEvent.replace(/_/g, ' ')}</span>
+                        <div className="p-1.5 rounded-lg bg-slate-50 dark:bg-dark-950 flex items-center justify-between border border-slate-200/50 dark:border-transparent">
+                          <span className="text-slate-500 dark:text-slate-400">Recent:</span>
+                          <span className="text-slate-700 dark:text-slate-300 truncate max-w-[70px] font-medium">{candidate.lastEvent.replace(/_/g, ' ')}</span>
                         </div>
                       </div>
 
                       {/* Card Footer Actions */}
-                      <div className="flex items-center justify-between pt-2 border-t border-white/10 text-xs">
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-white/10 text-xs">
                         <span className="text-[11px] text-slate-400 font-mono">{candidate.lastEventTime}</span>
-                        <span className="text-brand-400 text-[11px] font-semibold flex items-center gap-1 group-hover:translate-x-0.5 transition">
+                        <span className="text-indigo-600 dark:text-brand-400 text-[11px] font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition">
                           Inspect <ExternalLink className="w-3 h-3" />
                         </span>
                       </div>
@@ -724,36 +733,36 @@ export default function ExaminerDashboard() {
             </div>
 
             {/* Candidate Inspection & Incident Audit Pane (5 Cols) */}
-            <div className="lg:col-span-5 glass-panel rounded-3xl p-6 border border-white/10 shadow-2xl flex flex-col justify-between space-y-6">
+            <div className="lg:col-span-5 bg-white dark:bg-dark-900 rounded-3xl p-6 border border-slate-200/80 dark:border-white/10 shadow-stripe-lg dark:shadow-2xl flex flex-col justify-between space-y-6">
               <div>
                 {/* Candidate Header with PDF Export & Disqualify Button */}
-                <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-5">
+                <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-white/10 pb-4 mb-5">
                   <div>
-                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                       {selectedCandidate?.name}
                       {selectedCandidate?.status === 'DISQUALIFIED' && (
-                        <span className="text-xs px-2 py-0.5 bg-rose-500/20 text-rose-300 border border-rose-500/40 rounded-full font-bold">
+                        <span className="text-xs px-2 py-0.5 bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-500/40 rounded-full font-bold">
                           DISQUALIFIED
                         </span>
                       )}
                     </h3>
-                    <p className="text-xs text-slate-400 font-mono">Session ID: {selectedCandidate?.id}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">Session ID: {selectedCandidate?.id}</p>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleDownloadPDFReport(selectedCandidate.id, selectedCandidate.name)}
                       disabled={isExportingPDF}
-                      className="px-3 py-1.5 bg-dark-800 hover:bg-dark-750 text-slate-200 border border-white/10 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-sm"
+                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-dark-800 dark:hover:bg-dark-750 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-sm"
                       title="Download Official PDF Proctoring Audit Certificate"
                     >
-                      <Download className="w-3.5 h-3.5 text-brand-400" />
+                      <Download className="w-3.5 h-3.5 text-indigo-600 dark:text-brand-400" />
                       {isExportingPDF ? 'Generating...' : 'Export PDF'}
                     </button>
 
                     <button
                       onClick={() => setIsTerminateModalOpen(true)}
-                      className="px-2.5 py-1.5 bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 rounded-xl text-xs font-semibold flex items-center gap-1 transition cursor-pointer"
+                      className="px-2.5 py-1.5 bg-rose-50 dark:bg-rose-500/15 hover:bg-rose-100 dark:hover:bg-rose-500/25 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-300 rounded-xl text-xs font-semibold flex items-center gap-1 transition cursor-pointer"
                       title="Disqualify Candidate"
                     >
                       <UserX className="w-3.5 h-3.5" />
@@ -762,40 +771,40 @@ export default function ExaminerDashboard() {
                 </div>
 
                 {/* Simulated Live Video Feed & Camera Tile */}
-                <div className="relative aspect-video rounded-2xl overflow-hidden bg-dark-950 border border-white/10 mb-5 group">
+                <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 dark:border-white/10 mb-5 group">
                   <img
                     src={selectedCandidate?.avatar}
                     alt={selectedCandidate?.name}
                     className="w-full h-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-dark-950/80 via-transparent to-black/40 pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
 
                   {/* Corner Brackets */}
                   <div className="absolute inset-2 border border-white/10 pointer-events-none rounded-lg">
-                    <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-brand-400" />
-                    <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-brand-400" />
-                    <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-brand-400" />
-                    <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-brand-400" />
+                    <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-indigo-400" />
+                    <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-indigo-400" />
+                    <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-indigo-400" />
+                    <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-indigo-400" />
                   </div>
 
                   <div className="absolute top-3 left-3 flex items-center gap-2">
-                    <span className="px-2 py-0.5 bg-rose-600/90 text-white rounded text-[10px] font-mono font-bold flex items-center gap-1">
+                    <span className="px-2 py-0.5 bg-rose-600 text-white rounded text-[10px] font-mono font-bold flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> LIVE STREAM
                     </span>
-                    <span className="px-2 py-0.5 bg-dark-900/80 backdrop-blur border border-white/10 text-slate-300 rounded text-[10px] font-mono">
+                    <span className="px-2 py-0.5 bg-slate-950/80 backdrop-blur border border-white/10 text-white rounded text-[10px] font-mono">
                       MIC: {selectedCandidate?.audioLevel}% dB
                     </span>
                   </div>
 
                   <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs text-white">
-                    <span className="font-semibold drop-shadow">{selectedCandidate?.name}</span>
+                    <span className="font-bold drop-shadow">{selectedCandidate?.name}</span>
                     {getRiskBadge(selectedCandidate?.riskScore || 0)}
                   </div>
                 </div>
 
                 {/* Instant In-Exam Notice Form */}
-                <form onSubmit={handleSendWarning} className="mb-5 p-3.5 bg-dark-950/70 border border-white/10 rounded-2xl space-y-2.5">
-                  <label className="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider">
+                <form onSubmit={handleSendWarning} className="mb-5 p-3.5 bg-slate-50 dark:bg-dark-950/70 border border-slate-200/80 dark:border-white/10 rounded-2xl space-y-2.5">
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                     Direct Candidate Notice
                   </label>
                   <div className="flex gap-2">
@@ -804,11 +813,11 @@ export default function ExaminerDashboard() {
                       placeholder="e.g. Please look directly at your monitor..."
                       value={warningMessage}
                       onChange={(e) => setWarningMessage(e.target.value)}
-                      className="flex-1 bg-dark-900 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-brand-500"
+                      className="flex-1 bg-white dark:bg-dark-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-1.5 text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:border-indigo-600"
                     />
                     <button
                       type="submit"
-                      className="px-3.5 py-1.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1 transition cursor-pointer shadow-glow-indigo"
+                      className="px-3.5 py-1.5 bg-[#635bff] hover:bg-[#5851ea] text-white rounded-xl text-xs font-semibold flex items-center gap-1 transition cursor-pointer shadow-stripe-indigo"
                     >
                       <Send className="w-3.5 h-3.5" /> Send
                     </button>
@@ -817,12 +826,12 @@ export default function ExaminerDashboard() {
 
                 {/* Incident Event Timeline */}
                 <div className="space-y-3">
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     Proctoring Incident Timeline ({selectedCandidate?.history.length})
                   </h4>
 
                   {selectedCandidate?.history.length === 0 ? (
-                    <div className="p-6 rounded-2xl bg-dark-950/50 border border-white/5 text-center text-xs text-slate-500">
+                    <div className="p-6 rounded-2xl bg-slate-50 dark:bg-dark-950/50 border border-slate-200/60 dark:border-white/5 text-center text-xs text-slate-500">
                       Clean Session • No anomalies logged.
                     </div>
                   ) : (
@@ -830,35 +839,35 @@ export default function ExaminerDashboard() {
                       {selectedCandidate?.history.map((ev) => (
                         <div
                           key={ev.id}
-                          className="p-3.5 rounded-2xl bg-dark-950/90 border border-white/10 space-y-2.5 shadow-sm"
+                          className="p-3.5 rounded-2xl bg-slate-50 dark:bg-dark-950/90 border border-slate-200/80 dark:border-white/10 space-y-2.5 shadow-sm"
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <AlertTriangle className="w-4 h-4 text-amber-400" />
-                              <span className="text-xs font-bold text-white">
+                              <AlertTriangle className="w-4 h-4 text-amber-500" />
+                              <span className="text-xs font-bold text-slate-900 dark:text-white">
                                 {ev.type.replace(/_/g, ' ')}
                               </span>
                             </div>
-                            <span className="text-[11px] font-mono text-slate-400">{ev.time}</span>
+                            <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">{ev.time}</span>
                           </div>
 
-                          <div className="flex items-center justify-between text-xs pt-2 border-t border-white/5">
-                            <span className="text-[11px] text-slate-400">
+                          <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-200/60 dark:border-white/5">
+                            <span className="text-[11px] text-slate-500 dark:text-slate-400">
                               Status: <strong className={
-                                ev.status === 'CONFIRMED' ? 'text-rose-400' : ev.status === 'DISMISSED' ? 'text-emerald-400' : 'text-amber-400'
+                                ev.status === 'CONFIRMED' ? 'text-rose-600 dark:text-rose-400' : ev.status === 'DISMISSED' ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
                               }>{ev.status}</strong>
                             </span>
 
                             <div className="flex gap-2">
                               <button
                                 onClick={() => handleReviewAction(ev.id, 'CONFIRMED')}
-                                className="px-2.5 py-1 bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 rounded-lg text-[11px] font-semibold transition cursor-pointer"
+                                className="px-2.5 py-1 bg-rose-50 dark:bg-rose-500/15 hover:bg-rose-100 dark:hover:bg-rose-500/25 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30 rounded-lg text-[11px] font-semibold transition cursor-pointer"
                               >
                                 Confirm
                               </button>
                               <button
                                 onClick={() => handleReviewAction(ev.id, 'DISMISSED')}
-                                className="px-2.5 py-1 bg-dark-800 hover:bg-dark-750 text-slate-300 border border-white/10 rounded-lg text-[11px] font-semibold transition cursor-pointer"
+                                className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-dark-800 dark:hover:bg-dark-750 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 rounded-lg text-[11px] font-semibold transition cursor-pointer"
                               >
                                 Dismiss
                               </button>
@@ -871,7 +880,7 @@ export default function ExaminerDashboard() {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-white/10 text-center text-[11px] text-slate-500">
+              <div className="pt-4 border-t border-slate-200 dark:border-white/10 text-center text-[11px] text-slate-400 dark:text-slate-500">
                 ExamGuard AI Risk Engine • Strict Human-in-the-Loop Protocol
               </div>
             </div>
@@ -882,10 +891,10 @@ export default function ExaminerDashboard() {
         {viewMode === 'grid' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Live Video Monitoring Grid ({processedCandidates.length} Active Feeds)
               </h3>
-              <span className="text-[11px] font-mono text-emerald-400">Synchronized Stream Matrix</span>
+              <span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold">Synchronized Stream Matrix</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
@@ -896,34 +905,34 @@ export default function ExaminerDashboard() {
                 return (
                   <div
                     key={candidate.id}
-                    className={`glass-panel rounded-3xl overflow-hidden border transition relative group flex flex-col justify-between ${
+                    className={`bg-white dark:bg-dark-900 rounded-3xl overflow-hidden border transition-all duration-200 relative group flex flex-col justify-between shadow-stripe hover:shadow-stripe-lg ${
                       isDisqualified
-                        ? 'border-rose-900/50 bg-rose-950/20 opacity-60'
+                        ? 'border-rose-300 dark:border-rose-900/50 bg-rose-50/60 dark:bg-rose-950/20 opacity-70'
                         : isHighRisk
-                        ? 'border-rose-500 shadow-glow-rose bg-rose-950/10'
-                        : 'border-white/10 hover:border-white/20'
+                        ? 'border-rose-300 dark:border-rose-500 shadow-sm'
+                        : 'border-slate-200/80 dark:border-white/10 hover:border-indigo-300 dark:hover:border-white/20'
                     }`}
                   >
                     {/* Simulated Candidate Video Feed */}
-                    <div className="relative aspect-video bg-dark-950 overflow-hidden">
+                    <div className="relative aspect-video bg-slate-900 overflow-hidden">
                       <img
                         src={candidate.avatar}
                         alt={candidate.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-dark-950/90 via-transparent to-black/40 pointer-events-none" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
 
                       {/* Corner Brackets */}
                       <div className="absolute inset-2 border border-white/10 pointer-events-none rounded-lg">
-                        <div className="absolute top-0 left-0 w-2.5 h-2.5 border-t-2 border-l-2 border-brand-400" />
-                        <div className="absolute top-0 right-0 w-2.5 h-2.5 border-t-2 border-r-2 border-brand-400" />
-                        <div className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b-2 border-l-2 border-brand-400" />
-                        <div className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b-2 border-r-2 border-brand-400" />
+                        <div className="absolute top-0 left-0 w-2.5 h-2.5 border-t-2 border-l-2 border-indigo-400" />
+                        <div className="absolute top-0 right-0 w-2.5 h-2.5 border-t-2 border-r-2 border-indigo-400" />
+                        <div className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b-2 border-l-2 border-indigo-400" />
+                        <div className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b-2 border-r-2 border-indigo-400" />
                       </div>
 
                       <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                        <span className="px-1.5 py-0.5 bg-dark-900/80 backdrop-blur rounded text-[9px] font-mono text-slate-300">
+                        <span className="px-1.5 py-0.5 bg-slate-950/80 backdrop-blur rounded text-[9px] font-mono text-white">
                           {candidate.id}
                         </span>
                       </div>
@@ -940,34 +949,34 @@ export default function ExaminerDashboard() {
 
                       <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-xs text-white">
                         <span className="font-bold truncate max-w-[130px] drop-shadow">{candidate.name}</span>
-                        <span className="text-[10px] font-mono text-slate-300">Mic: {candidate.audioLevel}%</span>
+                        <span className="text-[10px] font-mono text-slate-200">Mic: {candidate.audioLevel}%</span>
                       </div>
                     </div>
 
                     {/* Quick Action Matrix Footer */}
-                    <div className="p-3.5 space-y-3 bg-dark-900/90">
+                    <div className="p-3.5 space-y-3 bg-white dark:bg-dark-900/90 border-t border-slate-100 dark:border-white/5">
                       <div className="flex items-center justify-between text-[11px]">
-                        <span className="text-slate-400">Last Incident:</span>
-                        <span className="text-slate-200 font-semibold">{candidate.lastEvent.replace(/_/g, ' ')}</span>
+                        <span className="text-slate-500 dark:text-slate-400">Last Incident:</span>
+                        <span className="text-slate-900 dark:text-slate-200 font-bold">{candidate.lastEvent.replace(/_/g, ' ')}</span>
                       </div>
 
-                      <div className="flex items-center gap-2 pt-2 border-t border-white/10">
+                      <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-white/10">
                         <button
                           onClick={() => {
                             setSelectedCandidate(candidate);
                             setViewMode('split');
                           }}
-                          className="flex-1 py-1.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1"
+                          className="flex-1 py-1.5 bg-[#635bff] hover:bg-[#5851ea] text-white rounded-xl text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1 shadow-stripe-indigo"
                         >
                           <Eye className="w-3.5 h-3.5" /> Inspect
                         </button>
 
                         <button
                           onClick={() => handleDownloadPDFReport(candidate.id, candidate.name)}
-                          className="p-1.5 bg-dark-800 hover:bg-dark-750 text-slate-300 border border-white/10 rounded-xl transition cursor-pointer"
+                          className="p-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-dark-800 dark:hover:bg-dark-750 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 rounded-xl transition cursor-pointer"
                           title="Export PDF Report"
                         >
-                          <Download className="w-3.5 h-3.5 text-brand-400" />
+                          <Download className="w-3.5 h-3.5 text-indigo-600 dark:text-brand-400" />
                         </button>
                       </div>
                     </div>
@@ -980,40 +989,40 @@ export default function ExaminerDashboard() {
 
         {/* View Mode 3: Compliance Table Mode */}
         {viewMode === 'table' && (
-          <div className="glass-panel rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
+          <div className="bg-white dark:bg-dark-900 rounded-3xl overflow-hidden border border-slate-200/80 dark:border-white/10 shadow-stripe-lg dark:shadow-2xl">
             <table className="w-full text-left text-xs">
-              <thead className="bg-dark-950/80 text-slate-400 uppercase tracking-wider text-[10px] border-b border-white/10">
+              <thead className="bg-slate-50 dark:bg-dark-950/80 text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[10px] border-b border-slate-200/80 dark:border-white/10">
                 <tr>
-                  <th className="p-4">Candidate</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4">Mic / Audio Level</th>
-                  <th className="p-4">Last Detected Incident</th>
-                  <th className="p-4">Risk Evaluation</th>
-                  <th className="p-4 text-right">Actions</th>
+                  <th className="p-4 font-bold">Candidate</th>
+                  <th className="p-4 font-bold">Status</th>
+                  <th className="p-4 font-bold">Mic / Audio Level</th>
+                  <th className="p-4 font-bold">Last Detected Incident</th>
+                  <th className="p-4 font-bold">Risk Evaluation</th>
+                  <th className="p-4 font-bold text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5 text-slate-300">
+              <tbody className="divide-y divide-slate-100 dark:divide-white/5 text-slate-700 dark:text-slate-300">
                 {processedCandidates.map((c) => (
                   <tr
                     key={c.id}
-                    className="hover:bg-dark-850/80 transition"
+                    className="hover:bg-slate-50 dark:hover:bg-dark-850/80 transition"
                   >
                     <td className="p-4 flex items-center gap-3">
-                      <img src={c.avatar} alt={c.name} className="w-8 h-8 rounded-full object-cover" />
+                      <img src={c.avatar} alt={c.name} className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-white/10" />
                       <div>
-                        <p className="font-semibold text-white">{c.name}</p>
-                        <p className="text-[11px] text-slate-400">{c.email}</p>
+                        <p className="font-bold text-slate-900 dark:text-white">{c.name}</p>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">{c.email}</p>
                       </div>
                     </td>
                     <td className="p-4">
-                      <span className={`font-semibold ${c.status === 'DISQUALIFIED' ? 'text-rose-400' : 'text-emerald-400'}`}>
+                      <span className={`font-bold ${c.status === 'DISQUALIFIED' ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                         {c.status}
                       </span>
                     </td>
-                    <td className="p-4 font-mono text-slate-300">
+                    <td className="p-4 font-mono text-slate-600 dark:text-slate-300 font-medium">
                       {c.audioLevel}% dB
                     </td>
-                    <td className="p-4 text-slate-300">{c.lastEvent.replace(/_/g, ' ')}</td>
+                    <td className="p-4 text-slate-700 dark:text-slate-300 font-medium">{c.lastEvent.replace(/_/g, ' ')}</td>
                     <td className="p-4">{getRiskBadge(c.riskScore)}</td>
                     <td className="p-4 text-right space-x-2">
                       <button
@@ -1021,13 +1030,13 @@ export default function ExaminerDashboard() {
                           setSelectedCandidate(c);
                           setViewMode('split');
                         }}
-                        className="px-2.5 py-1 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-[11px] font-semibold transition cursor-pointer"
+                        className="px-2.5 py-1 bg-[#635bff] hover:bg-[#5851ea] text-white rounded-lg text-[11px] font-semibold transition cursor-pointer"
                       >
                         Inspect
                       </button>
                       <button
                         onClick={() => handleDownloadPDFReport(c.id, c.name)}
-                        className="px-2.5 py-1 bg-dark-800 hover:bg-dark-750 text-slate-300 border border-white/10 rounded-lg text-[11px] font-semibold transition cursor-pointer"
+                        className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-dark-800 dark:hover:bg-dark-750 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 rounded-lg text-[11px] font-semibold transition cursor-pointer"
                       >
                         PDF
                       </button>
@@ -1042,21 +1051,21 @@ export default function ExaminerDashboard() {
 
       {/* Mass Broadcast Announcement Modal */}
       {isBroadcastModalOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
-          <div className="glass-panel rounded-3xl max-w-lg w-full p-6 border border-white/10 shadow-2xl space-y-5">
-            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+        <div className="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-dark-900 rounded-3xl max-w-lg w-full p-6 border border-slate-200 dark:border-white/10 shadow-stripe-lg dark:shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-4">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-amber-500/15 text-amber-400 rounded-xl">
+                <div className="p-2.5 bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 rounded-2xl">
                   <Megaphone className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white">Broadcast Announcement</h3>
-                  <p className="text-xs text-slate-400">Transmits to all {candidates.length} active exam sessions</p>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">Broadcast Announcement</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Transmits to all {candidates.length} active exam sessions</p>
                 </div>
               </div>
               <button
                 onClick={() => setIsBroadcastModalOpen(false)}
-                className="text-slate-400 hover:text-white cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer text-lg font-bold"
               >
                 ✕
               </button>
@@ -1064,7 +1073,7 @@ export default function ExaminerDashboard() {
 
             <form onSubmit={handleBroadcastAnnouncement} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
                   Announcement Message
                 </label>
                 <textarea
@@ -1073,21 +1082,21 @@ export default function ExaminerDashboard() {
                   onChange={(e) => setBroadcastMessage(e.target.value)}
                   placeholder="e.g. 10 minutes remaining. Ensure your video stream is unblocked."
                   required
-                  className="w-full bg-dark-950/80 border border-white/10 rounded-xl p-3.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+                  className="w-full bg-slate-50 dark:bg-dark-950/80 border border-slate-200 dark:border-white/10 rounded-xl p-3.5 text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:border-indigo-600"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-white/10">
                 <button
                   type="button"
                   onClick={() => setIsBroadcastModalOpen(false)}
-                  className="px-4 py-2 border border-white/10 rounded-xl text-xs text-slate-300 hover:bg-dark-800"
+                  className="px-4 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-semibold transition cursor-pointer"
+                  className="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-semibold shadow-sm transition cursor-pointer"
                 >
                   Send Broadcast
                 </button>
@@ -1099,46 +1108,46 @@ export default function ExaminerDashboard() {
 
       {/* Disqualification / Session Termination Modal */}
       {isTerminateModalOpen && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 z-50">
-          <div className="glass-panel rounded-3xl max-w-md w-full p-6 border border-rose-500/30 shadow-2xl space-y-4 shadow-glow-rose">
+        <div className="fixed inset-0 bg-slate-900/60 dark:bg-black/85 backdrop-blur-md flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-dark-900 rounded-3xl max-w-md w-full p-6 border border-rose-200 dark:border-rose-500/30 shadow-stripe-lg dark:shadow-2xl space-y-4">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-rose-500/20 text-rose-400 rounded-xl">
+              <div className="p-2.5 bg-rose-50 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-2xl">
                 <AlertOctagon className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white">Disqualify & Terminate Session?</h3>
-                <p className="text-xs text-slate-400">Candidate: {selectedCandidate?.name}</p>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">Disqualify & Terminate Session?</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Candidate: {selectedCandidate?.name}</p>
               </div>
             </div>
 
-            <p className="text-xs text-slate-300 leading-relaxed">
-              This action will immediately lock candidate <strong className="text-white">{selectedCandidate?.name}</strong> out of their exam session, revoke submission privileges, and log a permanent integrity penalty.
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              This action will immediately lock candidate <strong className="text-slate-900 dark:text-white">{selectedCandidate?.name}</strong> out of their exam session, revoke submission privileges, and log a permanent integrity penalty.
             </p>
 
             <div>
-              <label className="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+              <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
                 Integrity Infraction Reason
               </label>
               <textarea
                 rows="2"
                 value={terminateReason}
                 onChange={(e) => setTerminateReason(e.target.value)}
-                className="w-full bg-dark-950 border border-white/10 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-rose-500"
+                className="w-full bg-slate-50 dark:bg-dark-950 border border-slate-200 dark:border-white/10 rounded-xl p-2.5 text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:border-rose-500"
               />
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-white/10">
               <button
                 type="button"
                 onClick={() => setIsTerminateModalOpen(false)}
-                className="px-4 py-2 border border-white/10 rounded-xl text-xs text-slate-300 hover:bg-dark-800"
+                className="px-4 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleTerminateCandidate}
-                className="px-5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-semibold transition cursor-pointer shadow-glow-rose"
+                className="px-5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-semibold transition cursor-pointer shadow-sm"
               >
                 Confirm Termination
               </button>
@@ -1149,18 +1158,18 @@ export default function ExaminerDashboard() {
 
       {/* Create Exam Studio Modal */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
-          <div className="glass-panel rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8 border border-white/10 shadow-2xl space-y-6">
-            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+        <div className="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-dark-900 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8 border border-slate-200 dark:border-white/10 shadow-stripe-lg dark:shadow-2xl space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-brand-500/15 rounded-xl text-brand-400">
+                <div className="p-2.5 bg-indigo-50 dark:bg-brand-500/15 rounded-2xl text-indigo-600 dark:text-brand-400">
                   <BookOpen className="w-5 h-5" />
                 </div>
-                <h3 className="text-base font-bold text-white">Create Examination & Question Bank</h3>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">Create Examination & Question Bank</h3>
               </div>
               <button
                 onClick={() => setIsCreateModalOpen(false)}
-                className="text-slate-400 hover:text-slate-200 text-lg cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg font-bold cursor-pointer"
               >
                 ✕
               </button>
@@ -1168,7 +1177,7 @@ export default function ExaminerDashboard() {
 
             <form onSubmit={handleCreateExam} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
                   Exam Title
                 </label>
                 <input
@@ -1176,13 +1185,13 @@ export default function ExaminerDashboard() {
                   value={examForm.title}
                   onChange={(e) => setExamForm({ ...examForm, title: e.target.value })}
                   required
-                  className="w-full bg-dark-950/80 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-brand-500"
+                  className="w-full bg-slate-50 dark:bg-dark-950/80 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:border-indigo-600"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
                     Duration (Minutes)
                   </label>
                   <input
@@ -1191,16 +1200,16 @@ export default function ExaminerDashboard() {
                     onChange={(e) => setExamForm({ ...examForm, durationMinutes: Number(e.target.value) })}
                     min="5"
                     required
-                    className="w-full bg-dark-950/80 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-brand-500"
+                    className="w-full bg-slate-50 dark:bg-dark-950/80 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:border-indigo-600"
                   />
                 </div>
                 <div className="flex items-center pt-6">
-                  <label className="flex items-center gap-2.5 cursor-pointer text-xs text-slate-300">
+                  <label className="flex items-center gap-2.5 cursor-pointer text-xs text-slate-700 dark:text-slate-300 font-medium">
                     <input
                       type="checkbox"
                       checked={examForm.randomizeQuestions}
                       onChange={(e) => setExamForm({ ...examForm, randomizeQuestions: e.target.checked })}
-                      className="rounded bg-dark-950 border-white/10 text-brand-600 focus:ring-brand-500"
+                      className="rounded border-slate-300 dark:border-white/10 text-indigo-600 focus:ring-indigo-500"
                     />
                     Randomize Question Shuffling
                   </label>
@@ -1208,15 +1217,15 @@ export default function ExaminerDashboard() {
               </div>
 
               {/* Question Bank */}
-              <div className="pt-4 border-t border-white/10 space-y-4">
+              <div className="pt-4 border-t border-slate-200 dark:border-white/10 space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     Questions ({examForm.questions.length})
                   </span>
                   <button
                     type="button"
                     onClick={handleAddQuestion}
-                    className="text-xs text-brand-400 hover:text-brand-300 flex items-center gap-1 font-semibold cursor-pointer"
+                    className="text-xs text-indigo-600 dark:text-brand-400 hover:text-indigo-500 flex items-center gap-1 font-bold cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" /> Add Question
                   </button>
@@ -1224,8 +1233,8 @@ export default function ExaminerDashboard() {
 
                 <div className="space-y-4">
                   {examForm.questions.map((q, qIndex) => (
-                    <div key={qIndex} className="p-4 bg-dark-950/80 border border-white/10 rounded-2xl space-y-3">
-                      <span className="text-xs font-semibold text-brand-400">Question {qIndex + 1}</span>
+                    <div key={qIndex} className="p-4 bg-slate-50 dark:bg-dark-950/80 border border-slate-200/80 dark:border-white/10 rounded-2xl space-y-3">
+                      <span className="text-xs font-bold text-indigo-600 dark:text-brand-400">Question {qIndex + 1}</span>
                       <input
                         type="text"
                         placeholder="Enter statement..."
@@ -1236,24 +1245,24 @@ export default function ExaminerDashboard() {
                           setExamForm({ ...examForm, questions: updated });
                         }}
                         required
-                        className="w-full bg-dark-900 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-200"
+                        className="w-full bg-white dark:bg-dark-900 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:border-indigo-600"
                       />
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-6 border-t border-white/10">
+              <div className="flex justify-end gap-3 pt-6 border-t border-slate-200 dark:border-white/10">
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="px-4 py-2 border border-white/10 rounded-xl text-xs text-slate-300 hover:bg-dark-800"
+                  className="px-4 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold shadow-glow-indigo transition cursor-pointer"
+                  className="px-5 py-2 bg-[#635bff] hover:bg-[#5851ea] text-white rounded-xl text-xs font-semibold shadow-stripe-indigo transition cursor-pointer"
                 >
                   Publish Exam
                 </button>
