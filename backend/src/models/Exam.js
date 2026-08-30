@@ -40,11 +40,11 @@ const examSchema = new mongoose.Schema(
     },
     startTime: {
       type: Date,
-      required: true,
+      default: Date.now,
     },
     endTime: {
       type: Date,
-      required: true,
+      default: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
     },
     questions: [questionSchema],
     randomizeQuestions: {

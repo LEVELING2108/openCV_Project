@@ -59,6 +59,44 @@ export default function StudentExam() {
   const [socketConnected, setSocketConnected] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [questions, setQuestions] = useState(SAMPLE_QUESTIONS);
+  const [examData, setExamData] = useState(null);
+
+  // Fetch live exam questions from backend
+  useEffect(() => {
+    const fetchExam = async () => {
+      try {
+        const token = user?.token;
+        const res = await axios.get('http://localhost:5000/api/v1/exams', {
+          headers: {
+            Authorization: `Bearer ${token || 'demo_token'}`,
+          },
+        });
+        if (res.data?.success && res.data.data?.length > 0) {
+          const liveExam = res.data.data[0];
+          setExamData(liveExam);
+          if (liveExam.questions && liveExam.questions.length > 0) {
+            const formatted = liveExam.questions.map((q, idx) => ({
+              id: q._id || idx + 1,
+              question: q.questionText,
+              options: q.options.map((opt) => (typeof opt === 'string' ? opt : opt.text)),
+              difficulty: idx % 2 === 0 ? 'Fundamental' : 'Advanced',
+              points: q.points || (idx % 2 === 0 ? 1 : 2),
+            }));
+            setQuestions(formatted);
+          }
+          if (liveExam.durationMinutes) {
+            setTimeLeft(liveExam.durationMinutes * 60);
+          }
+        }
+      } catch (err) {
+        // Fallback to sample questions if backend offline
+        console.log('Using default sample questions bank.');
+      }
+    };
+
+    fetchExam();
+  }, [user]);
 
   // Telemetry state
   const [telemetry, setTelemetry] = useState({
@@ -462,7 +500,7 @@ export default function StudentExam() {
           <div className="p-4 bg-dark-900 rounded-xl border border-white/5 text-xs text-slate-300 space-y-1.5">
             <div className="flex justify-between">
               <span>Questions Answered:</span>
-              <strong className="text-white">{answeredCount} / {SAMPLE_QUESTIONS.length}</strong>
+              <strong className="text-white">{answeredCount} / {questions.length}</strong>
             </div>
             <div className="flex justify-between">
               <span>Session Status:</span>
@@ -471,7 +509,7 @@ export default function StudentExam() {
           </div>
           <button
             onClick={logout}
-            className="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-white text-xs font-medium rounded-xl transition"
+            className="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-white text-xs font-medium rounded-xl transition cursor-pointer"
           >
             Return to Home
           </button>
@@ -481,7 +519,7 @@ export default function StudentExam() {
   }
 
   // 3. ACTIVE EXAMINATION WORKSPACE
-  const q = SAMPLE_QUESTIONS[currentQuestion];
+  const q = questions[currentQuestion] || questions[0];
   const isBookmarked = !!bookmarkedQuestions[currentQuestion];
 
   return (
@@ -493,7 +531,7 @@ export default function StudentExam() {
             <Shield className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-sm font-semibold text-white">CS402: Algorithms & Data Structures</h1>
+            <h1 className="text-sm font-semibold text-white">{examData?.title || 'CS501: Advanced Computer Vision & AI'}</h1>
             <p className="text-[11px] text-slate-400">Candidate: {user?.name || 'Alex Rivera'}</p>
           </div>
         </div>
@@ -529,7 +567,7 @@ export default function StudentExam() {
       <div className="w-full bg-dark-900 h-1">
         <div
           className="bg-gradient-to-r from-brand-600 to-indigo-400 h-full transition-all duration-300"
-          style={{ width: `${((currentQuestion + 1) / SAMPLE_QUESTIONS.length) * 100}%` }}
+          style={{ width: `${((currentQuestion + 1) / questions.length) * 100}%` }}
         />
       </div>
 
@@ -542,7 +580,7 @@ export default function StudentExam() {
             <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
               <div className="flex items-center gap-2">
                 <span className="px-3 py-1 rounded-lg bg-brand-500/15 border border-brand-500/30 text-brand-300 text-xs font-semibold uppercase tracking-wider">
-                  Question {currentQuestion + 1} of {SAMPLE_QUESTIONS.length}
+                  Question {currentQuestion + 1} of {questions.length}
                 </span>
                 <span className="text-xs text-slate-400 px-2.5 py-1 rounded-lg bg-dark-900 border border-white/5">
                   {q.points} {q.points === 1 ? 'Point' : 'Points'} • {q.difficulty}
@@ -613,7 +651,7 @@ export default function StudentExam() {
 
             {/* Question quick selector pills */}
             <div className="flex items-center gap-2">
-              {SAMPLE_QUESTIONS.map((_, i) => {
+              {questions.map((_, i) => {
                 const isAns = selectedAnswers[i] !== undefined;
                 const isCurr = i === currentQuestion;
                 const isBkm = bookmarkedQuestions[i];
@@ -638,7 +676,7 @@ export default function StudentExam() {
               })}
             </div>
 
-            {currentQuestion < SAMPLE_QUESTIONS.length - 1 ? (
+            {currentQuestion < questions.length - 1 ? (
               <button
                 onClick={() => setCurrentQuestion((prev) => prev + 1)}
                 className="flex items-center gap-1 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-medium transition shadow-glow-indigo cursor-pointer"
@@ -777,7 +815,7 @@ export default function StudentExam() {
           <div className="glass-panel rounded-3xl max-w-md w-full p-6 border border-white/10 space-y-4 shadow-2xl">
             <h3 className="text-base font-bold text-white">Confirm Final Submission?</h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              You have answered <strong className="text-white">{answeredCount}</strong> of <strong className="text-white">{SAMPLE_QUESTIONS.length}</strong> questions. Once submitted, you cannot change your answers.
+              You have answered <strong className="text-white">{answeredCount}</strong> of <strong className="text-white">{questions.length}</strong> questions. Once submitted, you cannot change your answers.
             </p>
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
               <button

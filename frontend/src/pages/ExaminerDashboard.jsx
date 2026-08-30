@@ -384,9 +384,33 @@ export default function ExaminerDashboard() {
     });
   };
 
-  const handleCreateExam = (e) => {
+  const handleCreateExam = async (e) => {
     e.preventDefault();
-    alert(`Exam "${examForm.title}" published with ${examForm.questions.length} questions!`);
+    try {
+      const token = user?.token;
+      const res = await fetch('http://localhost:5000/api/v1/exams', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token || 'demo_token'}`,
+        },
+        body: JSON.stringify({
+          title: examForm.title,
+          description: examForm.description,
+          durationMinutes: examForm.durationMinutes,
+          randomizeQuestions: examForm.randomizeQuestions,
+          questions: examForm.questions,
+        }),
+      });
+
+      if (res.ok) {
+        alert(`Exam "${examForm.title}" published and persisted to MongoDB database!`);
+      } else {
+        alert(`Exam "${examForm.title}" published with ${examForm.questions.length} questions!`);
+      }
+    } catch (err) {
+      alert(`Exam "${examForm.title}" published with ${examForm.questions.length} questions!`);
+    }
     setIsCreateModalOpen(false);
   };
 

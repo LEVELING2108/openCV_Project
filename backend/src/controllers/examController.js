@@ -10,7 +10,13 @@ const getExams = async (req, res) => {
     if (req.user.role === 'examiner') {
       query = { creator: req.user._id };
     } else if (req.user.role === 'student') {
-      query = { assignedStudents: req.user._id };
+      query = {
+        $or: [
+          { assignedStudents: req.user._id },
+          { assignedStudents: { $size: 0 } },
+          { assignedStudents: { $exists: false } },
+        ],
+      };
     }
 
     const exams = await Exam.find(query)
@@ -45,20 +51,23 @@ const createExam = async (req, res) => {
       proctoringConfig,
     } = req.body;
 
-    if (!title || !durationMinutes || !startTime || !endTime) {
+    if (!title || !durationMinutes) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide title, durationMinutes, startTime, and endTime',
+        message: 'Please provide exam title and durationMinutes',
       });
     }
 
+    const now = new Date();
+    const defaultEndTime = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
     const exam = await Exam.create({
       title,
-      description,
+      description: description || '',
       creator: req.user._id,
-      durationMinutes,
-      startTime,
-      endTime,
+      durationMinutes: Number(durationMinutes),
+      startTime: startTime || now,
+      endTime: endTime || defaultEndTime,
       questions: questions || [],
       randomizeQuestions: randomizeQuestions !== undefined ? randomizeQuestions : true,
       assignedStudents: assignedStudents || [],
