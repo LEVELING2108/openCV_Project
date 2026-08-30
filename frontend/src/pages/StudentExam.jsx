@@ -3,7 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import {
   Shield, Camera, AlertTriangle, CheckCircle2, Clock, Eye,
   AlertCircle, Sparkles, Wifi, Bookmark, ChevronLeft, ChevronRight,
-  Send, Layers, RefreshCw, Smartphone, HelpCircle, Check, X, Maximize2
+  Send, Layers, RefreshCw, Smartphone, HelpCircle, Check, X, Maximize2,
+  Mic, MicOff, Volume2
 } from 'lucide-react';
 import axios from 'axios';
 import { io } from 'socket.io-client';
@@ -65,6 +66,9 @@ export default function StudentExam() {
     lookingAway: false,
     cameraBlocked: false,
     phoneDetected: false,
+    voiceDetected: false,
+    audioLevel: 0,
+    micActive: false,
   });
 
   const [eventLogs, setEventLogs] = useState([]);
@@ -121,27 +125,83 @@ export default function StudentExam() {
     };
   }, [user, isCalibrated, isSubmitted]);
 
-  // Camera Initialization
+  // Camera & Audio Initialization
   useEffect(() => {
     let stream = null;
-    const startCamera = async () => {
+    let audioCtx = null;
+    let analyser = null;
+    let animFrameId = null;
+
+    const startCameraAndMic = async () => {
       try {
         stream = await navigator.mediaDevices.getUserMedia({
           video: { width: 640, height: 480 },
-          audio: false,
+          audio: true,
         });
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           setIsCameraActive(true);
         }
+
+        // Set up real-time audio energy analyser
+        const audioTracks = stream.getAudioTracks();
+        if (audioTracks.length > 0) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) {
+            audioCtx = new AudioContextClass();
+            const source = audioCtx.createMediaStreamSource(stream);
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 128;
+            source.connect(analyser);
+
+            const pcmData = new Uint8Array(analyser.frequencyBinCount);
+            const checkAudio = () => {
+              if (analyser) {
+                analyser.getByteFrequencyData(pcmData);
+                let sum = 0;
+                for (let i = 0; i < pcmData.length; i++) {
+                  sum += pcmData[i];
+                }
+                const avgLevel = sum / pcmData.length;
+                const normalizedLevel = Math.min(Math.round((avgLevel / 128) * 100), 100);
+                const isSpeech = normalizedLevel > 35;
+
+                setTelemetry((prev) => ({
+                  ...prev,
+                  micActive: true,
+                  audioLevel: normalizedLevel,
+                  voiceDetected: isSpeech,
+                }));
+              }
+              animFrameId = requestAnimationFrame(checkAudio);
+            };
+            checkAudio();
+          }
+        }
       } catch (err) {
-        console.error('Camera access denied:', err);
+        console.warn('Microphone/Camera compound request failed, retrying camera only:', err);
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { width: 640, height: 480 },
+            audio: false,
+          });
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+            setIsCameraActive(true);
+          }
+        } catch (videoErr) {
+          console.error('Camera access denied:', videoErr);
+        }
       }
     };
 
-    startCamera();
+    startCameraAndMic();
 
     return () => {
+      if (animFrameId) cancelAnimationFrame(animFrameId);
+      if (audioCtx && audioCtx.state !== 'closed') {
+        audioCtx.close().catch(() => {});
+      }
       if (stream) {
         stream.getTracks().forEach((track) => track.stop());
       }
@@ -673,22 +733,16 @@ export default function StudentExam() {
                 </span>
               </div>
               <div className="p-2.5 bg-dark-900/90 border border-white/5 rounded-xl flex flex-col gap-1">
-                <span className="text-slate-400 text-[11px]">Camera Stream</span>
-                <span className={!telemetry.cameraBlocked ? 'text-emerald-400 font-semibold' : 'text-rose-400 font-semibold'}>
-                  {!telemetry.cameraBlocked ? 'Clear / Optimal' : 'Obstructed'}
-                </span>
-              </div>
-              <div className="p-2 bg-slate-950/70 border border-slate-800 rounded-lg flex flex-col gap-1">
-                <span className="text-slate-400 text-[11px]">Device Check</span>
-                <span className={!telemetry.phoneDetected ? 'text-emerald-400 font-medium' : 'text-rose-400 font-medium animate-pulse'}>
-                  {!telemetry.phoneDetected ? 'No Device' : '📱 Phone Detected!'}
-                </span>
-              </div>
-              <div className="p-2 bg-slate-950/70 border border-slate-800 rounded-lg flex flex-col gap-1">
-                <span className="text-slate-400 text-[11px]">Camera Integrity</span>
-                <span className={!telemetry.cameraBlocked ? 'text-emerald-400 font-medium' : 'text-rose-400 font-medium'}>
-                  {!telemetry.cameraBlocked ? 'Optimal' : 'Obstructed / Dark'}
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400 text-[11px]">Microphone</span>
+                  <span className="text-[10px] font-mono text-slate-500">{telemetry.audioLevel}%</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className={`w-2 h-2 rounded-full ${telemetry.voiceDetected ? 'bg-amber-400 animate-ping' : telemetry.micActive ? 'bg-emerald-400' : 'bg-slate-500'}`} />
+                  <span className={telemetry.voiceDetected ? 'text-amber-300 font-semibold' : telemetry.micActive ? 'text-emerald-400 font-semibold' : 'text-slate-400 font-semibold'}>
+                    {telemetry.voiceDetected ? 'Speech Detected' : telemetry.micActive ? 'Active / Quiet' : 'Mic Off'}
+                  </span>
+                </div>
               </div>
             </div>
 
