@@ -93,22 +93,39 @@ async def analyze_frame(payload: FrameAnalysisRequest):
     quality_result = pose_quality_detector.check_camera_quality(frame)
     camera_blocked = quality_result["camera_blocked"]
 
-    # 2. Fast OpenCV Face Detection
+    # 2. Fast OpenCV Cascaded Face Detection
     face_results = face_detector.detect_faces(frame)
-    face_missing = face_results["face_missing"]
-    multiple_faces = face_results["multiple_faces"]
+    face_count = face_results["face_count"]
+    face_boxes = face_results["boxes"]
 
-    # 3. Head Pose / Looking Away Deviation
-    looking_away = False
-    if face_results["face_count"] == 1:
-        pose_result = pose_quality_detector.estimate_looking_away(frame, face_results["boxes"][0])
-        looking_away = pose_result.get("looking_away", False)
-
-    # 4. YOLO Object & Person Detection
+    # 3. YOLO Object & Person Detection
     obj_results = object_detector.detect_objects(frame)
     phone_detected = obj_results["phone_detected"]
-    if obj_results["person_count"] > 1:
-        multiple_faces = True
+    person_count = obj_results["person_count"]
+
+    # 4. Hybrid Fusion: If Haar Cascade misses face but YOLO detects person, synthesize face bounding box
+    if face_count == 0 and person_count > 0:
+        face_count = person_count
+        for d in obj_results["detections"]:
+            if d["label"] == "person":
+                box = d["box"]
+                pw = box["x2"] - box["x1"]
+                ph = box["y2"] - box["y1"]
+                face_boxes.append({
+                    "x": box["x1"] + int(pw * 0.15),
+                    "y": box["y1"],
+                    "width": max(int(pw * 0.7), 20),
+                    "height": max(int(ph * 0.45), 20)
+                })
+
+    face_missing = (face_count == 0)
+    multiple_faces = (face_count > 1 or person_count > 1)
+
+    # 5. Head Pose / Looking Away Deviation
+    looking_away = False
+    if face_count == 1 and len(face_boxes) > 0:
+        pose_result = pose_quality_detector.estimate_looking_away(frame, face_boxes[0])
+        looking_away = pose_result.get("looking_away", False)
 
     # 5. Optional Audio Chunk Analysis in Frame Request
     voice_detected = False
@@ -166,7 +183,7 @@ async def analyze_frame(payload: FrameAnalysisRequest):
 
     return FrameAnalysisResponse(
         session_id=payload.session_id,
-        face_count=face_results["face_count"],
+        face_count=face_count,
         face_missing=face_missing,
         multiple_faces=multiple_faces,
         phone_detected=phone_detected,
