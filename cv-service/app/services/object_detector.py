@@ -6,23 +6,15 @@ class ObjectDetector:
     def __init__(self, model_name: str = None):
         self.model_name = model_name or settings.YOLO_MODEL
         self._model = None
-        # COCO class IDs: 0: person, 67: cell phone, 63: laptop, 73: book
-        self.target_classes = {
-            67: "cell phone",
-            0: "person",
-            63: "laptop",
-            73: "book"
-        }
+        try:
+            from ultralytics import YOLO
+            self._model = YOLO(self.model_name)
+            print(f"✅ YOLO model '{self.model_name}' successfully loaded and ready for inference!")
+        except Exception as e:
+            print(f"⚠️ Warning: YOLO model '{self.model_name}' could not be loaded: {e}")
 
     @property
     def model(self):
-        if self._model is None:
-            try:
-                from ultralytics import YOLO
-                self._model = YOLO(self.model_name)
-            except Exception as e:
-                print(f"⚠️ Warning: YOLO model '{self.model_name}' could not be loaded: {e}")
-                self._model = None
         return self._model
 
     def detect_objects(self, frame: np.ndarray) -> Dict[str, Any]:
@@ -36,7 +28,8 @@ class ObjectDetector:
                 "detections": []
             }
 
-        results = self.model(frame, verbose=False)
+        # Run YOLO with lower internal threshold to capture candidates
+        results = self.model(frame, conf=0.25, verbose=False)
         detections = []
         phone_detected = False
         person_count = 0
@@ -45,19 +38,24 @@ class ObjectDetector:
             for box in r.boxes:
                 cls_id = int(box.cls[0].item())
                 conf = float(box.conf[0].item())
+                class_name = self.model.names.get(cls_id, "").lower()
 
-                if cls_id in self.target_classes:
-                    label = self.target_classes[cls_id]
+                is_phone = "phone" in class_name or "cell" in class_name
+                is_person = class_name == "person"
+                is_laptop = class_name == "laptop"
+                is_book = class_name == "book"
+
+                if is_phone or is_person or is_laptop or is_book:
                     threshold = (
                         settings.PHONE_CONF_THRESHOLD
-                        if label == "cell phone"
+                        if is_phone
                         else settings.PERSON_CONF_THRESHOLD
                     )
 
                     if conf >= threshold:
                         xyxy = box.xyxy[0].tolist()
                         detection_info = {
-                            "label": label,
+                            "label": "cell phone" if is_phone else class_name,
                             "confidence": round(conf, 3),
                             "box": {
                                 "x1": int(xyxy[0]),
@@ -68,9 +66,9 @@ class ObjectDetector:
                         }
                         detections.append(detection_info)
 
-                        if label == "cell phone":
+                        if is_phone:
                             phone_detected = True
-                        elif label == "person":
+                        elif is_person:
                             person_count += 1
 
         return {
